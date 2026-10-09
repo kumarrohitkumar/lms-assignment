@@ -3,6 +3,7 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { authRouter } from './modules/auth/auth.routes';
 import type { StorageDriver } from './storage/StorageDriver';
 
 export interface AppDeps {
@@ -22,6 +23,8 @@ export function createApp({ storage, corsOrigins = [] }: AppDeps) {
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
+
+  app.use('/api/auth', authRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
