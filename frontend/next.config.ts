@@ -1,3 +1,4 @@
+import path from 'node:path';
 import type { NextConfig } from 'next';
 
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:4000';
@@ -7,6 +8,8 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
+    // The repo root has its own lockfile (for the dev runner); this app's root is this folder.
+    root: path.join(__dirname),
     rules: {
       '*.css': {
         loaders: ['@tailwindcss/turbopack'],
