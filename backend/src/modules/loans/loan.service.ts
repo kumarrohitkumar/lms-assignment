@@ -36,7 +36,7 @@ export async function transitionLoan(loanId: string, to: LoanStatus, { actor, no
       $set: { status: to, ...set },
       $push: { statusHistory: { from, to, by: actor.id, at: new Date(), note: note ?? null } },
     },
-    { new: true },
+    { returnDocument: 'after' },
   ).populate('borrower', BORROWER_FIELDS);
 
   if (!updated) throw conflict('The loan was updated by someone else. Refresh and try again.', 'INVALID_TRANSITION');

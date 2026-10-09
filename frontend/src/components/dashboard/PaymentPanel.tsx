@@ -2,11 +2,11 @@
 
 import { type FormEvent, useEffect, useState } from 'react';
 import { api, ApiError, errorMessage } from '@/lib/api';
+import { todayIst } from '@/lib/dates';
 import { formatDate, formatINR } from '@/lib/format';
 import type { Loan, Payment } from '@/lib/types';
 import { Alert, Button, Field, TextInput } from '../ui';
 
-const todayIst = () => new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10);
 
 export function PaymentPanel({ loan, onRecorded }: { loan: Loan; onRecorded: (loan: Loan) => void }) {
   const [payments, setPayments] = useState<Payment[] | null>(null);

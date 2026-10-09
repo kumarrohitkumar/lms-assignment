@@ -28,7 +28,7 @@ export async function saveProfile(userId: Types.ObjectId, input: ProfileInput) {
   const profile = await BorrowerProfile.findOneAndUpdate(
     { user: userId },
     { $set: { ...input, monthlySalary, bre: { ...bre, checkedAt: new Date() } } },
-    { upsert: true, new: true, runValidators: true },
+    { upsert: true, returnDocument: 'after', runValidators: true },
   );
 
   if (!bre.passed) {

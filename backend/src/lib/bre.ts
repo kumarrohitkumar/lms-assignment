@@ -1,3 +1,5 @@
+import { todayIstAsDate } from './dates';
+
 export const EMPLOYMENT_MODES = ['SALARIED', 'SELF_EMPLOYED', 'UNEMPLOYED'] as const;
 export type EmploymentMode = (typeof EMPLOYMENT_MODES)[number];
 
@@ -40,7 +42,7 @@ export function ageOn(dob: Date, today: Date): number {
 }
 
 /** Runs every rule and reports all failures, so the applicant can fix everything at once. */
-export function evaluateBre(input: BreInput, today: Date = new Date()): BreResult {
+export function evaluateBre(input: BreInput, today: Date = todayIstAsDate()): BreResult {
   const failures: BreFailure[] = [];
 
   const age = ageOn(input.dateOfBirth, today);

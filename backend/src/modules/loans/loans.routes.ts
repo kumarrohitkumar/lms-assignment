@@ -24,7 +24,8 @@ export function createLoansRouter({ storage }: { storage: StorageDriver }) {
     const slip = loan.salarySlip;
     const stream = await storage.getStream(slip.storageKey);
     res.setHeader('Content-Type', slip.mimeType);
-    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(slip.originalName)}"`);
+    const asciiName = slip.originalName.replace(/[^\x20-\x7e]|["\\]/g, '_');
+    res.setHeader('Content-Disposition', `inline; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(slip.originalName)}`);
     res.setHeader('Cache-Control', 'private, no-store');
     await pipeline(stream, res);
   });

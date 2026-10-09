@@ -1,3 +1,4 @@
+import { todayIst } from './dates';
 import type { BreFailure, EmploymentMode } from './types';
 
 /**
@@ -20,7 +21,7 @@ function ageOn(dob: Date, today: Date) {
   return age;
 }
 
-export function checkEligibility(input: EligibilityInput, today = new Date()): BreFailure[] {
+export function checkEligibility(input: EligibilityInput, today = new Date(`${todayIst()}T00:00:00Z`)): BreFailure[] {
   const failures: BreFailure[] = [];
   const dob = new Date(`${input.dateOfBirth}T00:00:00Z`);
   const age = ageOn(dob, today);

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { checkEligibility } from '@/lib/bre';
 
 const today = new Date('2026-10-09T00:00:00Z');
@@ -25,5 +25,14 @@ describe('client-side eligibility preview', () => {
     expect(checkEligibility({ ...ok, dateOfBirth: '2003-10-09' }, today)).toEqual([]);
     expect(checkEligibility({ ...ok, dateOfBirth: '1975-10-10' }, today)).toEqual([]);
     expect(checkEligibility({ ...ok, dateOfBirth: '1975-10-09' }, today).map((f) => f.rule)).toEqual(['AGE']);
+  });
+});
+
+describe('uses the Indian calendar date by default', () => {
+  it('treats 01:30 IST on the 23rd birthday as 23', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-09T20:00:00Z'));
+    expect(checkEligibility({ ...ok, dateOfBirth: '2003-10-10' })).toEqual([]);
+    vi.useRealTimers();
   });
 });

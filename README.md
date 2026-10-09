@@ -87,7 +87,7 @@ Browser ──► Next.js (:3000) ── rewrite /api/* ──► Express API (:
               │  React client pages                           └──► Storage driver (local disk | S3)
 ```
 
-The browser only talks to the Next.js origin. Next forwards `/api/*` to Express, so the JWT can live in a first-party **httpOnly** cookie. JavaScript can't read the token, no CORS round-trips are needed, and the same setup works when the frontend and backend are deployed separately.
+The browser only talks to the Next.js origin. Next forwards `/api/*` to Express, so the JWT can live in a first-party **httpOnly** cookie. The web app never stores or reads the token itself, no CORS round-trips are needed, and the same setup works when the frontend and backend are deployed separately.
 
 ### Folder structure
 
@@ -178,15 +178,20 @@ APPLIED ──approve (Sanction/Admin)──► SANCTIONED ──disburse (Disbu
   - The amount must be greater than 0, have at most 2 decimals, and be no more than the outstanding balance.
   - The UTR must be 8–30 letters or digits and unique across all payments. A duplicate returns **409**, and the uniqueness is enforced by a database index.
   - The payment date can't be in the future or before the disbursal date.
-- **Concurrency:** `amountPaid` is incremented with one atomic, conditional update (`amountPaid + amount ≤ totalRepayment`). The same update sets status to Closed when the balance reaches zero. If that guard fails, for example because two payments arrive at once, the payment that was just inserted is removed. There is a test that fires three overlapping payments and checks that exactly one is accepted.
+- **Concurrency:** `amountPaid` is incremented with one atomic, conditional update (`amountPaid + amount ≤ totalRepayment`). The same update sets status to Closed when the balance reaches zero. If that guard fails, for example because two payments arrive at once, or the update throws, the payment that was just inserted is removed so the UTR can be retried. There is a test that fires three overlapping payments and checks that exactly one is accepted.
+- **Known limit:** the payment insert and the loan update are two writes, not one transaction. If the process crashed between them, or a write reached the database just before the connection dropped, the payment list and `amountPaid` could disagree. MongoDB multi-document transactions would close that gap, but they need a replica set. A plain local `mongod` doesn't have one, so this version doesn't use them. On Atlas, which always runs a replica set, wrapping `recordPayment` in `session.withTransaction()` is the next step.
+- **Dates:** payment dates and the BRE's "today" use the Indian calendar date (UTC+5:30), so behaviour doesn't change between midnight and 05:30 IST. Impossible dates such as `2026-02-30` are rejected instead of rolling over to March.
 
 ### Authentication and RBAC
 
-- Passwords are hashed with bcrypt. A JWT `{ sub, role }` is set as an httpOnly, SameSite=Lax cookie (Secure in production). `Authorization: Bearer` is also accepted for API clients.
-- `authenticate` verifies the token and **reloads the user** on every request, so deleted users or changed roles take effect immediately. A missing or invalid token gets **401**.
+- Passwords are hashed with bcrypt. A JWT `{ sub, role }` is set as an httpOnly, SameSite=Lax cookie (Secure in production) that expires with the token. The token is also returned in the login response for non-browser API clients, which can send `Authorization: Bearer`.
+- Login and sign-up are rate-limited to 30 attempts per 15 minutes per IP. In production the server refuses to start with a short or placeholder `JWT_SECRET`.
+- `authenticate` verifies the token and **reloads the user** on every request, so the API applies deleted users or changed roles immediately. A missing or invalid token gets **401**. (The frontend route guard reads the role from the token, so its redirects catch up at the next login.)
 - `authorize(...roles)` checks the role against a single `MODULE_ROLES` map. The wrong role gets **403**.
 - **Frontend:**
   - `proxy.ts` redirects each role away from pages it can't use.
+  - After login, a `?next=` value is honoured only if it is an in-app page the role may open, so it can't be used for open redirects or `javascript:` URLs.
+  - If the API rejects a session cookie (for example after a reseed), the app clears the cookie and returns to the login page.
   - The dashboard only renders the modules the role allows.
   - Each module page checks the role again.
   - These checks are for user experience. The API applies the same rules on every request.
@@ -195,7 +200,7 @@ APPLIED ──approve (Sanction/Admin)──► SANCTIONED ──disburse (Disbu
 
 - Salary slips go through multer with a 5 MB limit; larger files get **413**.
 - The declared MIME type must be PDF, PNG or JPEG, **and** the file's first bytes must match that type. A `.txt` renamed to `.pdf` is rejected.
-- Files are stored under server-generated keys and never served statically. They are streamed through `GET /api/loans/:id/salary-slip` only to the owning borrower and to staff who handle loans.
+- Files are stored under server-generated keys and never served statically. Re-uploading keeps the earlier file in storage as an audit trail. A borrower who reapplies after a rejection can reuse the slip on file. They are streamed through `GET /api/loans/:id/salary-slip` only to the owning borrower and to staff who handle loans.
 - Storage is pluggable:
   - `STORAGE_DRIVER=local` writes to `backend/uploads/` and is the default.
   - `STORAGE_DRIVER=s3` writes to a private bucket with server-side encryption. Use it on hosts whose disks are wiped on restart.
@@ -208,8 +213,8 @@ Base path: `/api`. Errors always look like `{ "error": { "code", "message", "det
 
 | Method & path | Roles | Success | Notable errors |
 |---|---|---|---|
-| `POST /auth/register` `{name,email,password}` | public | 201 `{user, token}` + cookie | 400, 409 email taken |
-| `POST /auth/login` `{email,password}` | public | 200 `{user, token}` + cookie | 401 |
+| `POST /auth/register` `{name,email,password}` | public | 201 `{user, token}` + cookie | 400, 409 email taken, 429 |
+| `POST /auth/login` `{email,password}` | public | 200 `{user, token}` + cookie | 401, 429 too many attempts |
 | `POST /auth/logout` | any | 204 | |
 | `GET /auth/me` | authenticated | 200 `{user}` | 401 |
 | `GET /borrower/profile` | Borrower | 200 `{profile, stage}` | |
@@ -250,10 +255,10 @@ A loan in API responses has this shape (amounts in rupees):
 npm test
 ```
 
-- **Backend (120 tests):**
+- **Backend (126 tests):**
   - Unit tests for the BRE (age boundaries, PAN formats, multiple failures), loan math, money conversion, the status machine and the storage driver.
-  - API tests against an in-memory MongoDB for every route: success paths, validation, 401/403 for every module, 409 conflicts, duplicate UTR, overpayment, concurrent payments, auto-close, and a full lifecycle test using the seeded accounts.
-- **Frontend (25 tests):** loan math matches the server, client BRE, RBAC helpers, INR formatting, and a component test that moves the sliders and checks the live repayment panel.
+  - API tests against an in-memory MongoDB for every route: success paths, validation, 401/403 for every module, 409 conflicts, duplicate UTR, overpayment, concurrent payments, auto-close, rollback when the loan update fails, Indian-date boundaries, impossible dates, and a full lifecycle test using the seeded accounts.
+- **Frontend (36 tests):** loan math matches the server, client BRE, RBAC helpers including the safe `?next=` redirect, INR formatting, and a component test that moves the sliders and checks the live repayment panel.
 
 The first backend run downloads a MongoDB binary for `mongodb-memory-server`. To use an installed `mongod` instead, set `MONGOMS_SYSTEM_BINARY=/path/to/mongod`.
 
@@ -267,7 +272,7 @@ The first backend run downloads a MongoDB binary for `mongodb-memory-server`. To
 |---|---|---|
 | `PORT` | `4000` | API port |
 | `MONGO_URI` | `mongodb://localhost:27017/lms` | Database |
-| `JWT_SECRET` | none, **required** | Token signing secret |
+| `JWT_SECRET` | none, **required** | Token signing secret (32+ random characters in production) |
 | `JWT_EXPIRES_IN` | `1d` | Token lifetime |
 | `CORS_ORIGINS` | `http://localhost:3000` | Only needed if a browser calls the API directly |
 | `STORAGE_DRIVER` | `local` | `local` or `s3` |

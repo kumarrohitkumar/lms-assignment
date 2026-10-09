@@ -17,6 +17,11 @@ const schema = z.object({
   S3_BUCKET: z.string().optional(),
 });
 
+const productionSafe = schema.refine(
+  (e) => e.NODE_ENV !== 'production' || (e.JWT_SECRET.length >= 32 && !e.JWT_SECRET.startsWith('change-me')),
+  { message: 'In production JWT_SECRET must be a random string of at least 32 characters', path: ['JWT_SECRET'] },
+);
+
 export type Env = z.infer<typeof schema>;
 
 let cached: Env | undefined;
@@ -24,7 +29,7 @@ let cached: Env | undefined;
 /** Parsed lazily so tests can set process.env before first use. */
 export function env(): Env {
   if (!cached) {
-    const parsed = schema.safeParse(process.env);
+    const parsed = productionSafe.safeParse(process.env);
     if (!parsed.success) {
       throw new Error(`Invalid environment configuration:\n${z.prettifyError(parsed.error)}`);
     }

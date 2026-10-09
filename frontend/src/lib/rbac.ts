@@ -31,3 +31,27 @@ export function canAccessPath(role: Role, path: string): boolean {
   if (isUnder(path, '/dashboard')) return allowedModules(role).some((m) => isUnder(path, m.href));
   return true;
 }
+
+const APP_AREAS = ['/apply', '/dashboard'];
+
+/**
+ * Where to send a user after login when the URL carries `?next=`. Only same-origin app pages the role may
+ * open are honoured; anything else (javascript:, //host, absolute URLs, API routes) falls back to the role's
+ * home, which closes the open-redirect / script-injection hole.
+ */
+export function safeNextPath(role: Role, next: string | null | undefined): string {
+  const home = homePathFor(role);
+  if (!next || !next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\')) return home;
+
+  const base = 'http://app.invalid';
+  let url: URL;
+  try {
+    url = new URL(next, base);
+  } catch {
+    return home;
+  }
+  if (url.origin !== base) return home;
+  if (!APP_AREAS.some((area) => isUnder(url.pathname, area))) return home;
+  if (!canAccessPath(role, url.pathname)) return home;
+  return url.pathname + url.search;
+}

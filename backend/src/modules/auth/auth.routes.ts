@@ -1,4 +1,6 @@
 import { type CookieOptions, type Response, Router } from 'express';
+import rateLimit from 'express-rate-limit';
+import jwt from 'jsonwebtoken';
 import { env } from '../../config/env';
 import { AUTH_COOKIE, authenticate, signToken } from '../../middleware/authenticate';
 import { validateBody } from '../../middleware/validate';
@@ -6,26 +8,37 @@ import type { Role } from '../../lib/roles';
 import { loginSchema, registerSchema } from './auth.schemas';
 import { registerBorrower, toPublicUser, verifyCredentials } from './auth.service';
 
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
 function cookieOptions(): CookieOptions {
   return { httpOnly: true, sameSite: 'lax', secure: env().NODE_ENV === 'production', path: '/' };
 }
 
 function issueSession(res: Response, user: { _id: unknown; name: string; email: string; role: string }) {
   const token = signToken({ _id: user._id, role: user.role as Role });
-  res.cookie(AUTH_COOKIE, token, { ...cookieOptions(), maxAge: ONE_DAY_MS });
+  // Cookie lifetime follows the token's own expiry (JWT_EXPIRES_IN), so the two never drift apart.
+  const { exp } = jwt.decode(token) as { exp: number };
+  res.cookie(AUTH_COOKIE, token, { ...cookieOptions(), expires: new Date(exp * 1000) });
+  // The token is also returned for non-browser API clients that send `Authorization: Bearer`.
   return { user: toPublicUser(user), token };
 }
 
+/** Slows down password guessing and sign-up spam. Off in tests, which log in hundreds of times. */
+const credentialLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  skip: () => env().NODE_ENV === 'test',
+  message: { error: { code: 'TOO_MANY_REQUESTS', message: 'Too many attempts. Try again in a few minutes.' } },
+});
+
 export const authRouter = Router();
 
-authRouter.post('/register', validateBody(registerSchema), async (req, res) => {
+authRouter.post('/register', credentialLimiter, validateBody(registerSchema), async (req, res) => {
   const user = await registerBorrower(req.body);
   res.status(201).json(issueSession(res, user));
 });
 
-authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
+authRouter.post('/login', credentialLimiter, validateBody(loginSchema), async (req, res) => {
   const user = await verifyCredentials(req.body);
   res.json(issueSession(res, user));
 });

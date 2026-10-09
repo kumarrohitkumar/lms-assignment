@@ -3,6 +3,7 @@
 import { type FormEvent, useState } from 'react';
 import { api, ApiError, errorMessage } from '@/lib/api';
 import { checkEligibility } from '@/lib/bre';
+import { todayIst } from '@/lib/dates';
 import type { BreFailure, EmploymentMode, Profile, ProfileResponse } from '@/lib/types';
 import { Alert, Button, Field, SelectInput, TextInput } from '../ui';
 
@@ -11,7 +12,6 @@ interface Props {
   onSaved: (res: ProfileResponse) => void;
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
 
 export function PersonalDetailsForm({ initial, onSaved }: Props) {
   const [form, setForm] = useState({
@@ -109,7 +109,7 @@ export function PersonalDetailsForm({ initial, onSaved }: Props) {
         </Field>
         <Field label="Date of birth" error={fieldErrors.dateOfBirth ?? hints.AGE} hint="You must be 23 to 50 years old.">
           {(id, d) => (
-            <TextInput id={id} aria-describedby={d} type="date" max={today()} value={form.dateOfBirth} onChange={set('dateOfBirth')} invalid={!!(fieldErrors.dateOfBirth ?? hints.AGE)} />
+            <TextInput id={id} aria-describedby={d} type="date" max={todayIst()} value={form.dateOfBirth} onChange={set('dateOfBirth')} invalid={!!(fieldErrors.dateOfBirth ?? hints.AGE)} />
           )}
         </Field>
         <Field label="Monthly salary (₹)" error={fieldErrors.monthlySalary ?? hints.SALARY} hint="Take-home pay. Minimum ₹25,000.">

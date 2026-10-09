@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { type FormEvent, useState } from 'react';
 import { api, ApiError, errorMessage } from '@/lib/api';
-import { canAccessPath, homePathFor } from '@/lib/rbac';
+import { safeNextPath } from '@/lib/rbac';
 import type { User } from '@/lib/types';
 import { Alert, Button, Field, TextInput } from './ui';
 
@@ -27,7 +27,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       const { user } = await api<{ user: User }>(`/auth/${mode}`, { body });
       const next = new URLSearchParams(window.location.search).get('next');
       // Full navigation so the new session starts from a clean client state.
-      window.location.assign(next && canAccessPath(user.role, next) ? next : homePathFor(user.role));
+      window.location.assign(safeNextPath(user.role, next));
       return;
     } catch (err) {
       if (err instanceof ApiError && Array.isArray(err.details)) {

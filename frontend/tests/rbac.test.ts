@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allowedModules, canAccessPath, homePathFor } from '@/lib/rbac';
+import { allowedModules, canAccessPath, homePathFor, safeNextPath } from '@/lib/rbac';
 
 describe('rbac helpers', () => {
   it('gives each executive exactly one module and admin all four', () => {
@@ -30,5 +30,33 @@ describe('rbac helpers', () => {
     ['COLLECTION', '/dashboard/salesy', false],
   ] as const)('%s on %s → %s', (role, path, allowed) => {
     expect(canAccessPath(role, path)).toBe(allowed);
+  });
+});
+
+describe('safeNextPath (post-login redirect)', () => {
+  it.each([
+    ['javascript:alert(document.cookie)'],
+    ['JavaScript:fetch("/api")'],
+    ['//evil.example'],
+    ['/\\evil.example'],
+    ['https://evil.example/dashboard/sales'],
+    ['dashboard/sales'],
+    [''],
+  ])('ignores unsafe value %s and falls back to the role home', (next) => {
+    expect(safeNextPath('ADMIN', next)).toBe('/dashboard/sales');
+  });
+
+  it('ignores a same-origin path the role cannot open', () => {
+    expect(safeNextPath('SALES', '/dashboard/sanction')).toBe('/dashboard/sales');
+    expect(safeNextPath('BORROWER', '/dashboard/sales')).toBe('/apply');
+  });
+
+  it('keeps an allowed in-app path, including its query string', () => {
+    expect(safeNextPath('ADMIN', '/dashboard/collection?tab=1')).toBe('/dashboard/collection?tab=1');
+    expect(safeNextPath('BORROWER', '/apply')).toBe('/apply');
+  });
+
+  it('only allows app pages, not arbitrary same-origin URLs like the API', () => {
+    expect(safeNextPath('ADMIN', '/api/auth/logout')).toBe('/dashboard/sales');
   });
 });

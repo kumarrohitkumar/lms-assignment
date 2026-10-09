@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { todayIst } from '../../lib/dates';
+import { isRealIsoDate, todayIst } from '../../lib/dates';
 import { hasAtMostTwoDecimals } from '../../lib/money';
 
 export const paymentSchema = z.object({
@@ -15,7 +15,7 @@ export const paymentSchema = z.object({
   paymentDate: z
     .string({ error: 'Payment date is required' })
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use the YYYY-MM-DD format')
-    .refine((v) => !Number.isNaN(new Date(`${v}T00:00:00Z`).getTime()), 'Enter a valid date')
+    .refine(isRealIsoDate, 'Enter a valid date')
     .refine((v) => v <= todayIst(), 'Payment date cannot be in the future'),
 });
 

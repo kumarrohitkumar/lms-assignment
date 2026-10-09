@@ -59,26 +59,35 @@ export async function recordPayment(loanId: string, input: PaymentInput, recorde
   const fullyPaid = { $eq: ['$amountPaid', '$totalRepayment'] };
   const closedEntry = { from: LoanStatus.DISBURSED, to: LoanStatus.CLOSED, by: null, at: now, note: 'Fully repaid' };
 
-  const updated = await Loan.findOneAndUpdate(
-    {
-      _id: loan._id,
-      status: LoanStatus.DISBURSED,
-      $expr: { $lte: [{ $add: ['$amountPaid', amount] }, '$totalRepayment'] },
-    },
-    [
-      { $set: { amountPaid: { $add: ['$amountPaid', amount] } } },
+  let updated;
+  try {
+    updated = await Loan.findOneAndUpdate(
       {
-        $set: {
-          status: { $cond: [fullyPaid, LoanStatus.CLOSED, '$status'] },
-          closedAt: { $cond: [fullyPaid, now, '$closedAt'] },
-          statusHistory: {
-            $cond: [fullyPaid, { $concatArrays: ['$statusHistory', [{ $literal: closedEntry }]] }, '$statusHistory'],
+        _id: loan._id,
+        status: LoanStatus.DISBURSED,
+        $expr: { $lte: [{ $add: ['$amountPaid', amount] }, '$totalRepayment'] },
+      },
+      [
+        { $set: { amountPaid: { $add: ['$amountPaid', amount] } } },
+        {
+          $set: {
+            status: { $cond: [fullyPaid, LoanStatus.CLOSED, '$status'] },
+            closedAt: { $cond: [fullyPaid, now, '$closedAt'] },
+            statusHistory: {
+              $cond: [fullyPaid, { $concatArrays: ['$statusHistory', [{ $literal: closedEntry }]] }, '$statusHistory'],
+            },
           },
         },
-      },
-    ],
-    { new: true, updatePipeline: true },
-  ).populate('borrower', 'name email');
+      ],
+      { returnDocument: 'after', updatePipeline: true },
+    ).populate('borrower', 'name email');
+  } catch (err) {
+    // Treat the update as not applied and remove the payment, so the balance and the payment list agree
+    // and the UTR can be retried. Only a transaction (needs a replica set) also covers a write that landed
+    // just before the connection dropped; see "Payments" in the README.
+    await Payment.deleteOne({ _id: payment._id });
+    throw err;
+  }
 
   if (!updated) {
     // Another payment changed the balance (or closed the loan) between our read and write.
