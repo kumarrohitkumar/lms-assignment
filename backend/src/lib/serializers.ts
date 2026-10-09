@@ -95,3 +95,15 @@ export function serializeLoan(loan: {
     updatedAt: loan.updatedAt,
   };
 }
+
+export function serializePayment(p: { _id: unknown; loan: unknown; utr: string; amount: number; paymentDate: Date; recordedBy: unknown; createdAt?: Date }) {
+  return {
+    id: String(p._id),
+    loan: String(p.loan),
+    utr: p.utr,
+    amount: toRupees(p.amount),
+    paymentDate: isoDate(p.paymentDate),
+    recordedBy: String(p.recordedBy),
+    createdAt: p.createdAt,
+  };
+}

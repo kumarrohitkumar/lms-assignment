@@ -4,6 +4,7 @@ import express from 'express';
 import helmet from 'helmet';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { authRouter } from './modules/auth/auth.routes';
+import { collectionRouter } from './modules/collection/collection.routes';
 import { createBorrowerRouter } from './modules/borrower/borrower.routes';
 import { disbursementRouter } from './modules/disbursement/disbursement.routes';
 import { createLoansRouter } from './modules/loans/loans.routes';
@@ -35,6 +36,7 @@ export function createApp({ storage, corsOrigins = [] }: AppDeps) {
   app.use('/api/sales', salesRouter);
   app.use('/api/sanction', sanctionRouter);
   app.use('/api/disbursement', disbursementRouter);
+  app.use('/api/collection', collectionRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
