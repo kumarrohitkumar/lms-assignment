@@ -33,3 +33,65 @@ export function serializeProfile(p: {
     salarySlip: serializeSlip(p.salarySlip),
   };
 }
+
+type PopulatedUser = { _id: unknown; name: string; email: string };
+
+export function serializeLoan(loan: {
+  _id: unknown;
+  borrower: unknown;
+  applicant: { fullName: string; pan: string; dateOfBirth: Date; monthlySalary: number; employmentMode: string };
+  salarySlip: SlipLike;
+  principal: number;
+  tenureDays: number;
+  interestRatePa: number;
+  simpleInterest: number;
+  totalRepayment: number;
+  amountPaid: number;
+  status: string;
+  rejectionReason?: string | null;
+  statusHistory: { from?: string | null; to: string; by?: unknown; at: Date; note?: string | null }[];
+  sanctionedAt?: Date | null;
+  disbursedAt?: Date | null;
+  closedAt?: Date | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+}) {
+  const borrower =
+    loan.borrower && typeof loan.borrower === 'object' && 'email' in loan.borrower
+      ? { id: String((loan.borrower as PopulatedUser)._id), name: (loan.borrower as PopulatedUser).name, email: (loan.borrower as PopulatedUser).email }
+      : { id: String(loan.borrower) };
+
+  return {
+    id: String(loan._id),
+    borrower,
+    applicant: {
+      fullName: loan.applicant.fullName,
+      pan: loan.applicant.pan,
+      dateOfBirth: isoDate(loan.applicant.dateOfBirth),
+      monthlySalary: toRupees(loan.applicant.monthlySalary),
+      employmentMode: loan.applicant.employmentMode,
+    },
+    salarySlip: serializeSlip(loan.salarySlip),
+    principal: toRupees(loan.principal),
+    tenureDays: loan.tenureDays,
+    interestRatePa: loan.interestRatePa,
+    simpleInterest: toRupees(loan.simpleInterest),
+    totalRepayment: toRupees(loan.totalRepayment),
+    amountPaid: toRupees(loan.amountPaid),
+    outstanding: toRupees(loan.totalRepayment - loan.amountPaid),
+    status: loan.status,
+    rejectionReason: loan.rejectionReason ?? null,
+    statusHistory: loan.statusHistory.map((h) => ({
+      from: h.from ?? null,
+      to: h.to,
+      by: h.by ? String(h.by) : null,
+      at: h.at,
+      note: h.note ?? null,
+    })),
+    sanctionedAt: loan.sanctionedAt ?? null,
+    disbursedAt: loan.disbursedAt ?? null,
+    closedAt: loan.closedAt ?? null,
+    createdAt: loan.createdAt,
+    updatedAt: loan.updatedAt,
+  };
+}

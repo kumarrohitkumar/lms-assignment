@@ -9,6 +9,7 @@ import { serializeProfile } from '../../lib/serializers';
 import { BorrowerProfile } from '../../models/BorrowerProfile';
 import type { StorageDriver } from '../../storage';
 import type { ProfileInput } from './borrower.schemas';
+import { assertNoOpenLoan } from './loan.service';
 
 type ProfileDocument = NonNullable<Awaited<ReturnType<typeof BorrowerProfile.findOne>>>;
 
@@ -20,6 +21,7 @@ export const getProfile = (userId: Types.ObjectId) => BorrowerProfile.findOne({ 
 
 /** Saves personal details and runs the BRE on the server. A failed BRE is persisted, then reported as 422. */
 export async function saveProfile(userId: Types.ObjectId, input: ProfileInput) {
+  await assertNoOpenLoan(userId);
   const monthlySalary = toPaise(input.monthlySalary);
   const bre = evaluateBre({ ...input, monthlySalary });
 
@@ -45,6 +47,7 @@ export interface UploadedFile {
 export async function saveSalarySlip(userId: Types.ObjectId, file: UploadedFile | undefined, storage: StorageDriver) {
   if (!file) throw badRequest('Attach a salary slip file in the "file" field');
 
+  await assertNoOpenLoan(userId);
   const profile = await getProfile(userId);
   if (!profile?.bre?.passed) {
     throw conflict('Complete your personal details and pass the eligibility check first', 'BRE_NOT_PASSED');
