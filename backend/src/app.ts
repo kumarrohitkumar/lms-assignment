@@ -4,6 +4,7 @@ import express from 'express';
 import helmet from 'helmet';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { authRouter } from './modules/auth/auth.routes';
+import { createBorrowerRouter } from './modules/borrower/borrower.routes';
 import type { StorageDriver } from './storage/StorageDriver';
 
 export interface AppDeps {
@@ -25,6 +26,7 @@ export function createApp({ storage, corsOrigins = [] }: AppDeps) {
   });
 
   app.use('/api/auth', authRouter);
+  app.use('/api/borrower', createBorrowerRouter({ storage }));
 
   app.use(notFoundHandler);
   app.use(errorHandler);
