@@ -5,6 +5,10 @@ import helmet from 'helmet';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { authRouter } from './modules/auth/auth.routes';
 import { createBorrowerRouter } from './modules/borrower/borrower.routes';
+import { disbursementRouter } from './modules/disbursement/disbursement.routes';
+import { createLoansRouter } from './modules/loans/loans.routes';
+import { salesRouter } from './modules/sales/sales.routes';
+import { sanctionRouter } from './modules/sanction/sanction.routes';
 import type { StorageDriver } from './storage/StorageDriver';
 
 export interface AppDeps {
@@ -27,6 +31,10 @@ export function createApp({ storage, corsOrigins = [] }: AppDeps) {
 
   app.use('/api/auth', authRouter);
   app.use('/api/borrower', createBorrowerRouter({ storage }));
+  app.use('/api/loans', createLoansRouter({ storage }));
+  app.use('/api/sales', salesRouter);
+  app.use('/api/sanction', sanctionRouter);
+  app.use('/api/disbursement', disbursementRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

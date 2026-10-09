@@ -22,3 +22,15 @@ export async function prepareBorrower(app: Express, cookie: string) {
     .attach('file', PDF_BYTES, { filename: 'slip.pdf', contentType: 'application/pdf' })
     .expect(201);
 }
+
+/** A fresh borrower with an APPLIED loan. */
+export async function createAppliedLoan(
+  app: Express,
+  loginAs: (app: Express, role: 'BORROWER') => Promise<{ cookie: string; user: { _id: unknown } }>,
+  loan = { principal: 100000, tenureDays: 365 },
+) {
+  const borrower = await loginAs(app, 'BORROWER');
+  await prepareBorrower(app, borrower.cookie);
+  const res = await request(app).post('/api/borrower/loans').set('Cookie', borrower.cookie).send(loan).expect(201);
+  return { borrower, loanId: res.body.loan.id as string };
+}
