@@ -217,3 +217,35 @@ form[data-shake="true"] { animation: shake 0.42s ease-in-out; }
 .shield-check { stroke-dasharray: 30; animation: check-stroke 0.3s ease-out 0.55s both; }
 .shield-halo { transform-origin: center; transform-box: fill-box; animation: halo 0.5s ease-out both; }
 .trust-step { animation: rise 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: calc(0.35s + var(--i, 0) * 0.18s); }
+
+/* Login hero: a 9-second loop through the loan journey. */
+@keyframes hero-chip {
+  0% { opacity: 0; transform: translateY(4px); }
+  4%, 30% { opacity: 1; transform: none; }
+  34%, 100% { opacity: 0; transform: translateY(-4px); }
+}
+@keyframes hero-progress {
+  0%, 30% { width: 33%; }
+  34%, 63% { width: 66%; }
+  67%, 100% { width: 100%; }
+}
+@keyframes hero-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes hero-float-back { 0%, 100% { transform: rotate(3deg) translateY(0); } 50% { transform: rotate(3deg) translateY(6px); } }
+@keyframes hero-coin {
+  0% { transform: translateY(0) scale(0.8); opacity: 0; }
+  15% { opacity: 0.95; }
+  100% { transform: translateY(-190px) scale(1); opacity: 0; }
+}
+@keyframes hero-bar { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.hero-chip { opacity: 0; animation: hero-chip 9s ease-in-out infinite; }
+.hero-progress { width: 33%; transition: width 0.4s; animation: hero-progress 9s ease-in-out infinite; }
+.hero-front { animation: hero-float 6s ease-in-out infinite; }
+.hero-back { transform: rotate(3deg); animation: hero-float-back 7s ease-in-out infinite; }
+.hero-coin { opacity: 0; animation: hero-coin 6.5s ease-in infinite; }
+.hero-bar { transform-origin: bottom; animation: hero-bar 0.5s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .hero-chip { opacity: 0; }
+  .hero-chip:last-child { opacity: 1; }
+  .hero-progress { width: 100%; }
+  .hero-coin { display: none; }
+}

@@ -25,6 +25,8 @@ describe('<AuthForm mode="login">', () => {
 
     const overlay = await screen.findByRole('status', { name: /signing you in/i });
     expect(overlay).toHaveTextContent('Signing you in, Priya');
+    // Rendered straight into <body>, so no animated (transformed) ancestor can shrink "fixed inset-0".
+    expect(overlay.parentElement).toBe(document.body);
     // The real steps, shown in order while the next page loads.
     expect(overlay).toHaveTextContent('Details verified');
     expect(overlay).toHaveTextContent('Secure session created');

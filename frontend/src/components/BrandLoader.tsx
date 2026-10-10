@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { cx } from '@/lib/cx';
 
 /**
@@ -31,7 +32,8 @@ export function BrandLoader({ label, size = 'md', className }: { label: string; 
  * last step is the next page loading).
  */
 export function SigningInOverlay({ title, steps, label }: { title: string; steps: [string, string, string]; label: string }) {
-  return (
+  // A portal into <body>: inside an animated (transformed) ancestor, `fixed` would only cover that ancestor.
+  return createPortal(
     <div role="status" aria-label={label} className="anim-fade fixed inset-0 z-50 grid place-items-center bg-paper/95 px-6 backdrop-blur-sm">
       <div className="flex w-full max-w-xs flex-col items-center text-center">
         <svg viewBox="0 0 64 64" className="size-20" aria-hidden="true">
@@ -67,6 +69,7 @@ export function SigningInOverlay({ title, steps, label }: { title: string; steps
           })}
         </ol>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import { Brand } from './Brand';
+import { LoanHeroArt } from './LoanHeroArt';
 import { ThemeToggle } from './ThemeToggle';
-
-const JOURNEY = ['Applied', 'Sanctioned', 'Disbursed', 'Closed'];
 
 /** Only claims the product actually makes good on. */
 const PROMISES = [
@@ -30,7 +29,7 @@ function Promise({ title, body, icon, i }: { title: string; body: string; icon: 
 export function AuthLayout({ title, intro, children }: { title: string; intro: string; children: ReactNode }) {
   return (
     <main className="grid min-h-screen lg:grid-cols-[1fr_minmax(0,34rem)]">
-      <aside className="relative hidden flex-col justify-between overflow-hidden bg-ledger p-12 text-white lg:flex">
+      <aside className="relative hidden flex-col justify-between gap-6 overflow-hidden bg-ledger px-12 py-10 text-white lg:flex">
         {/* Faint ledger rules in the background. */}
         <div
           aria-hidden="true"
@@ -40,28 +39,18 @@ export function AuthLayout({ title, intro, children }: { title: string; intro: s
         <Brand href="/login" light />
 
         <div className="relative max-w-md">
-          <p className="anim-rise text-3xl font-semibold leading-snug" style={{ '--i': 1 } as React.CSSProperties}>
+          <p className="anim-rise text-[1.75rem] font-semibold leading-snug" style={{ '--i': 1 } as React.CSSProperties}>
             Personal loans from ₹50,000 to ₹5,00,000, at a flat 12% a year.
           </p>
-          <p className="anim-rise mt-4 text-white/75" style={{ '--i': 2 } as React.CSSProperties}>
-            Check your eligibility in a minute, upload one salary slip, and see exactly what you will repay before you apply.
+          <p className="anim-rise mt-3 text-white/75" style={{ '--i': 2 } as React.CSSProperties}>
+            Check eligibility in a minute, upload one salary slip, and see exactly what you will repay.
           </p>
 
-          {/* The loan journey lights up step by step. */}
-          <ol className="anim-rise relative mt-10 grid grid-cols-4" aria-label="How a loan moves" style={{ '--i': 3 } as React.CSSProperties}>
-            <span aria-hidden="true" className="absolute top-4 right-[12.5%] left-[12.5%] h-0.5 bg-white/20" />
-            <span aria-hidden="true" className="journey-track absolute top-4 right-[12.5%] left-[12.5%] h-0.5 bg-white" />
-            {JOURNEY.map((step, i) => (
-              <li key={step} className="relative flex flex-col items-center gap-2 text-center">
-                <span className="journey-step grid size-8 place-items-center rounded-full text-sm font-bold" style={{ '--i': i } as React.CSSProperties}>
-                  {i + 1}
-                </span>
-                <span className="text-sm text-white/85">{step}</span>
-              </li>
-            ))}
-          </ol>
+          <div className="anim-rise mt-8" style={{ '--i': 3 } as React.CSSProperties}>
+            <LoanHeroArt />
+          </div>
 
-          <ul className="mt-10 flex flex-col gap-4">
+          <ul className="mt-6 flex flex-col gap-3.5">
             {PROMISES.map((p, i) => (
               <Promise key={p.title} {...p} i={i} />
             ))}
