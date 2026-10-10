@@ -1,12 +1,7 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { api, errorMessage } from '@/lib/api';
-import { employmentLabel, formatBytes, formatDate, formatINR } from '@/lib/format';
+import { formatDate } from '@/lib/format';
 import { allowedModules } from '@/lib/rbac';
-import type { Loan, ProfileResponse, User } from '@/lib/types';
-import { ROLE_LABEL, STATUS_LABEL } from '../loan/labels';
-import { Skeleton, cx } from '../ui';
+import type { User } from '@/lib/types';
+import { ROLE_LABEL } from '../loan/labels';
 
 const dateTime = (iso: string) =>
   new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -47,91 +42,7 @@ function access(user: User) {
   return modules.length === 1 ? `${modules[0]!.label} module` : modules.map((m) => m.label).join(', ');
 }
 
-function BorrowerSections() {
-  const [profile, setProfile] = useState<ProfileResponse | null>(null);
-  const [loans, setLoans] = useState<Loan[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    Promise.all([api<ProfileResponse>('/borrower/profile'), api<{ loans: Loan[] }>('/borrower/loans')]).then(
-      ([p, l]) => {
-        setProfile(p);
-        setLoans(l.loans);
-      },
-      (e) => setError(errorMessage(e)),
-    );
-  }, []);
-
-  if (error) return <p className="mt-6 text-sm text-rust">{error}</p>;
-  if (!profile || !loans) return <Skeleton className="mt-6 h-48" />;
-
-  const p = profile.profile;
-  const current = loans[0];
-  return (
-    <>
-      <Section title="Personal details">
-        {p ? (
-          <Rows
-            rows={[
-              ['Full name', p.fullName],
-              ['PAN', <span key="pan" className="tabular tracking-wide">{p.pan}</span>],
-              ['Date of birth', formatDate(p.dateOfBirth)],
-              ['Monthly salary', <span key="sal" className="tabular">{formatINR(p.monthlySalary)}</span>],
-              ['Employment', employmentLabel[p.employmentMode]],
-            ]}
-          />
-        ) : (
-          <p className="rounded-lg border border-dashed border-line-strong px-4 py-3 text-sm text-ink-soft">
-            You haven&apos;t added your personal details yet. Start your application to add them.
-          </p>
-        )}
-      </Section>
-
-      {p && (
-        <Section title="Eligibility and documents">
-          <Rows
-            rows={[
-              [
-                'Eligibility',
-                <span key="bre" className={cx('font-semibold', p.bre?.passed ? 'text-ledger-ink' : 'text-rust')}>
-                  {p.bre?.passed ? 'Eligible' : 'Not eligible'}
-                  {p.bre && !p.bre.passed && <span className="mt-0.5 block text-xs font-normal">{p.bre.failures.map((f) => f.message).join(' ')}</span>}
-                </span>,
-              ],
-              ...(p.bre ? ([['Checked on', formatDate(p.bre.checkedAt)]] as [string, React.ReactNode][]) : []),
-              [
-                'Salary slip',
-                p.salarySlip ? `${p.salarySlip.originalName} (${formatBytes(p.salarySlip.size)}), uploaded ${formatDate(p.salarySlip.uploadedAt)}` : 'Not uploaded yet',
-              ],
-            ]}
-          />
-        </Section>
-      )}
-
-      <Section title="Loans">
-        {current ? (
-          <Rows
-            rows={[
-              ['Applications', `${loans.length} ${loans.length === 1 ? 'loan' : 'loans'}`],
-              [
-                'Latest',
-                <span key="latest" className="tabular">
-                  {formatINR(current.principal)}, {STATUS_LABEL[current.status]}
-                  {current.status === 'DISBURSED' && `, ${formatINR(current.outstanding)} outstanding`}
-                </span>,
-              ],
-              ['Applied on', formatDate(current.createdAt)],
-            ]}
-          />
-        ) : (
-          <p className="rounded-lg border border-dashed border-line-strong px-4 py-3 text-sm text-ink-soft">No loans yet.</p>
-        )}
-      </Section>
-    </>
-  );
-}
-
-/** Everything the signed-in person can know about their own account. */
+/** The signed-in person's account: who they are, what they can access, and when they joined and last logged in. */
 export function ProfileDetails({ user }: { user: User }) {
   return (
     <div>
@@ -158,7 +69,6 @@ export function ProfileDetails({ user }: { user: User }) {
         />
       </Section>
 
-      {user.role === 'BORROWER' && <BorrowerSections />}
     </div>
   );
 }

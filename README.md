@@ -28,7 +28,7 @@ Everything the assignment asks for is implemented as specified. These additions 
 | **Due dates and overdue** | Each disbursed loan is due its tenure after the disbursal date. Collection lists overdue loans first; cards and the borrower view show "Due in N days" or "Overdue by N days"; the overview totals what is overdue. |
 | **Working faster** | Search by name, email or PAN in every queue. Refresh shows progress and the time of the last update. |
 | **API docs** | Interactive Swagger UI at [`/api/docs`](https://kosh-lms.vercel.app/api/docs) over an OpenAPI 3.1 document ([`/api/openapi.json`](https://kosh-lms.vercel.app/api/openapi.json)); a test keeps it in step with the routes. |
-| **My profile** | Click your avatar in the header to see your account: email, role, what you can access, member since and last login. Borrowers also see their personal details, eligibility result, salary slip and loans. |
+| **My profile** | Click your avatar in the header to see your account: name, email, role, what you can access, member since and last login. |
 | **Dark mode** | Dark by default; switch to Light or System from the header. The choice is remembered and applied before the page paints, so there is no flash. |
 | **Motion** | Lists rise in, dialogs pop, drawers slide, numbers count up, and changes flash once. All of it is turned off for people who set "reduce motion". |
 
