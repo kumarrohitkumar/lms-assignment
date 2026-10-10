@@ -55,7 +55,7 @@ Three ways to run it, easiest first. None of them needs a cloud account: locally
 **2. Docker, one command.** Needs Docker only.
 
 ```bash
-git clone <repo-url> lms-assignment && cd lms-assignment
+git clone https://github.com/kumarrohitkumar/lms-assignment.git && cd lms-assignment
 docker compose up --build
 ```
 
@@ -64,7 +64,7 @@ Open **http://localhost:3000**. MongoDB, the API and the web app start together,
 **3. Node.** Needs Node.js 20.9+ (`.nvmrc` says 22) and MongoDB on `localhost:27017`. If you don't have MongoDB, start one with `docker run -d -p 27017:27017 --name lms-mongo mongo:7`.
 
 ```bash
-git clone <repo-url> lms-assignment && cd lms-assignment
+git clone https://github.com/kumarrohitkumar/lms-assignment.git && cd lms-assignment
 npm install     # installs everything and creates backend/.env and frontend/.env.local from the examples
 npm run dev     # API on :4000, web app on :3000; demo accounts are created on first start
 ```
