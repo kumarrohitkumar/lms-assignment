@@ -17,12 +17,21 @@ interface LeadRow {
   } | null;
 }
 
+const leadsPipeline = [
+  { $match: { role: Role.BORROWER } },
+  { $lookup: { from: 'loans', localField: '_id', foreignField: 'borrower', as: 'loans', pipeline: [{ $limit: 1 }] } },
+  { $match: { loans: { $size: 0 } } },
+];
+
+export async function countLeads(): Promise<number> {
+  const [row] = await User.aggregate<{ n: number }>([...leadsPipeline, { $count: 'n' }]);
+  return row?.n ?? 0;
+}
+
 /** Leads = borrowers who registered but have never applied for a loan. */
 export async function listLeads() {
   const rows = await User.aggregate<LeadRow>([
-    { $match: { role: Role.BORROWER } },
-    { $lookup: { from: 'loans', localField: '_id', foreignField: 'borrower', as: 'loans', pipeline: [{ $limit: 1 }] } },
-    { $match: { loans: { $size: 0 } } },
+    ...leadsPipeline,
     { $lookup: { from: 'borrowerprofiles', localField: '_id', foreignField: 'user', as: 'profile' } },
     { $project: { name: 1, email: 1, createdAt: 1, profile: { $ifNull: [{ $first: '$profile' }, null] } } },
     { $sort: { createdAt: -1 } },
