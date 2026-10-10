@@ -48,20 +48,28 @@ Demo data already in the live database: Priya Sharma (`priya@example.com` / `Sec
 
 ## Quick start
 
-**Prerequisites:** Node.js 20.9+ and MongoDB 7 or newer. If you don't have MongoDB installed, run `docker compose up -d` to start one.
+Three ways to run it, easiest first. None of them needs a cloud account: locally, the data goes to MongoDB on your machine and salary slips go to a folder.
+
+**1. Use the live demo:** https://kosh-lms.vercel.app. Nothing to install.
+
+**2. Docker, one command.** Needs Docker only.
 
 ```bash
 git clone <repo-url> lms-assignment && cd lms-assignment
-npm install                                  # installs root, backend and frontend
-
-cp backend/.env.example backend/.env         # set JWT_SECRET to any long random string
-cp frontend/.env.example frontend/.env.local
-
-npm run seed                                 # creates one account per role
-npm run dev                                  # API on :4000, web app on :3000
+docker compose up --build
 ```
 
-Open **http://localhost:3000**.
+Open **http://localhost:3000**. MongoDB, the API and the web app start together, and the demo accounts are created on first start. Only port 3000 is used, so a MongoDB already running on your machine doesn't get in the way. Stop with `Ctrl+C`; `docker compose down -v` removes the data.
+
+**3. Node.** Needs Node.js 20.9+ (`.nvmrc` says 22) and MongoDB on `localhost:27017`. If you don't have MongoDB, start one with `docker run -d -p 27017:27017 --name lms-mongo mongo:7`.
+
+```bash
+git clone <repo-url> lms-assignment && cd lms-assignment
+npm install     # installs everything and creates backend/.env and frontend/.env.local from the examples
+npm run dev     # API on :4000, web app on :3000; demo accounts are created on first start
+```
+
+Open **http://localhost:3000**. The example settings work as they are: local MongoDB, local file storage, and a development-only `JWT_SECRET` that the server refuses to use in production. `npm run seed` resets the demo accounts at any time.
 
 ### Login credentials
 
