@@ -6,6 +6,7 @@ import { employmentLabel, formatDate, formatDays, formatINR } from '@/lib/format
 import type { LoanDetail } from '@/lib/types';
 import { LifecycleTrack } from '../LifecycleTrack';
 import { Alert, Drawer, Skeleton, StatusBadge, cx } from '../ui';
+import { DueBadge } from './DueBadge';
 import { EligibilityChecklist } from './EligibilityChecklist';
 import { RejectionNotice } from './RejectionNotice';
 import { Timeline } from './Timeline';
@@ -29,7 +30,10 @@ export function LoanDetailsBody({ detail }: { detail: LoanDetail }) {
           <p className="font-semibold">{loan.applicant.fullName}</p>
           <p className="text-sm text-ink-soft">{loan.borrower.email}</p>
         </div>
-        <StatusBadge status={loan.status} />
+        <div className="flex flex-col items-end gap-1.5">
+          <StatusBadge status={loan.status} />
+          <DueBadge loan={loan} />
+        </div>
       </div>
       <div className="mt-5">
         <LifecycleTrack loan={loan} />
@@ -46,6 +50,7 @@ export function LoanDetailsBody({ detail }: { detail: LoanDetail }) {
           ['Total repayment', formatINR(loan.totalRepayment)],
           ['Paid', formatINR(loan.amountPaid)],
           ['Outstanding', formatINR(loan.outstanding)],
+          ...(loan.dueDate ? [['Due date', formatDate(loan.dueDate)]] : []),
         ].map(([k, v]) => (
           <div key={k}>
             <dt className="text-ink-soft">{k}</dt>

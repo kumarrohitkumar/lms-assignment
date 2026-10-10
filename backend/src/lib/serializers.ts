@@ -1,4 +1,5 @@
 import { categoryLabel, type DecisionStage } from './decisions';
+import { dueInfo } from './dueDate';
 import { toRupees } from './money';
 
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
@@ -109,6 +110,7 @@ export function serializeLoan(loan: {
     sanctionedAt: loan.sanctionedAt ?? null,
     disbursedAt: loan.disbursedAt ?? null,
     closedAt: loan.closedAt ?? null,
+    ...dueInfo(loan),
     createdAt: loan.createdAt,
     updatedAt: loan.updatedAt,
   };

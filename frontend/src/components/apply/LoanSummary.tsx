@@ -4,6 +4,7 @@ import { employmentLabel, formatDate, formatDays, formatINR } from '@/lib/format
 import type { Loan } from '@/lib/types';
 import { LifecycleTrack } from '../LifecycleTrack';
 import { useState } from 'react';
+import { DueBadge } from '../loan/DueBadge';
 import { EligibilityChecklist } from '../loan/EligibilityChecklist';
 import { useLoanDetail } from '../loan/LoanDetails';
 import { RejectionNotice } from '../loan/RejectionNotice';
@@ -50,14 +51,25 @@ export function LoanSummary({ loan, defaultOpen = false }: { loan: Loan; default
             for {formatDays(loan.tenureDays)} at {loan.interestRatePa}% a year
           </p>
         </div>
-        <StatusBadge status={loan.status} />
+        <div className="flex flex-col items-end gap-1.5">
+          <StatusBadge status={loan.status} />
+          <DueBadge loan={loan} />
+        </div>
       </div>
 
       <div className="mt-6">
         <LifecycleTrack loan={loan} />
       </div>
 
-      <p className="mt-6 text-ink-soft">{statusCopy[loan.status]}</p>
+      <p className="mt-6 text-ink-soft">
+        {statusCopy[loan.status]}
+        {loan.status === 'DISBURSED' && loan.dueDate && (
+          <>
+            {' '}
+            Repay {formatINR(loan.outstanding)} by <span className="font-semibold text-ink">{formatDate(loan.dueDate)}</span>.
+          </>
+        )}
+      </p>
       <div className="mt-3">
         <RejectionNotice loan={loan} />
       </div>

@@ -77,6 +77,11 @@ export interface Loan {
   sanctionedAt: string | null;
   disbursedAt: string | null;
   closedAt: string | null;
+  /** Repayment due date (disbursal date + tenure); null until disbursed. */
+  dueDate: string | null;
+  /** Days left until the due date, negative when overdue; null unless the loan is active. */
+  daysToDue: number | null;
+  overdue: boolean;
   createdAt: string;
 }
 
@@ -119,5 +124,6 @@ export interface Overview {
   counts: Record<LoanStatus, number>;
   leads: number;
   borrowers: number;
+  overdue: { count: number; outstanding: number };
   money: { disbursed: number; collected: number; outstanding: number };
 }

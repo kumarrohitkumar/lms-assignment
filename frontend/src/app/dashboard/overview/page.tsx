@@ -66,22 +66,28 @@ export default function OverviewPage() {
     >
       {error && <Alert>{error}</Alert>}
       {!data && !error && (
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[0, 1, 2].map((i) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-28" />
           ))}
         </div>
       )}
       {data && (
         <>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { label: 'Disbursed', value: data.money.disbursed, note: 'Principal paid out' },
               { label: 'Collected', value: data.money.collected, note: 'Repayments received' },
               { label: 'Outstanding', value: data.money.outstanding, note: 'Still due on active loans' },
+              {
+                label: 'Overdue',
+                value: data.overdue.outstanding,
+                note: `${data.overdue.count} ${data.overdue.count === 1 ? 'loan is' : 'loans are'} past the due date`,
+                alert: data.overdue.count > 0,
+              },
             ].map((t, i) => (
-              <Panel key={t.label} className="anim-rise p-5" style={{ '--i': i } as React.CSSProperties}>
-                <p className="text-sm text-ink-soft">{t.label}</p>
+              <Panel key={t.label} className={`anim-rise p-5 ${'alert' in t && t.alert ? 'border-rust/40 bg-rust-wash' : ''}`} style={{ '--i': i } as React.CSSProperties}>
+                <p className={`text-sm ${'alert' in t && t.alert ? 'text-rust' : 'text-ink-soft'}`}>{t.label}</p>
                 <p className="tabular mt-1 text-2xl font-bold tracking-tight">
                   <Count value={t.value} money />
                 </p>

@@ -13,9 +13,12 @@ export const collectionRouter = Router();
 collectionRouter.use(authenticate, authorize(...MODULE_ROLES.collection));
 
 collectionRouter.get('/loans', async (req, res) => {
-  const status = req.query.view === 'closed' ? LoanStatus.CLOSED : LoanStatus.DISBURSED;
-  const loans = await listLoansByStatus(status, req.query.q);
-  res.json({ loans: loans.map(serializeLoan) });
+  const closed = req.query.view === 'closed';
+  const loans = (await listLoansByStatus(closed ? LoanStatus.CLOSED : LoanStatus.DISBURSED, req.query.q)).map(serializeLoan);
+  // Active loans: overdue first, then whatever falls due soonest. Closed loans: most recently closed first.
+  if (closed) loans.sort((a, b) => (b.closedAt?.getTime() ?? 0) - (a.closedAt?.getTime() ?? 0));
+  else loans.sort((a, b) => (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999'));
+  res.json({ loans });
 });
 
 collectionRouter.get('/loans/:id/payments', async (req, res) => {

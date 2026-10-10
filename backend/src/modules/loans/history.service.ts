@@ -1,3 +1,4 @@
+import { dueInfo } from '../../lib/dueDate';
 import { LOAN_STATUSES, LoanStatus } from '../../lib/loanStatus';
 import { toRupees } from '../../lib/money';
 import { Role } from '../../lib/roles';
@@ -57,7 +58,7 @@ export async function listAllLoans(query: { status?: unknown; q?: unknown; page?
 
 /** Portfolio summary for the admin overview. */
 export async function portfolioOverview() {
-  const [statusRows, disbursedRows, collectedRows, outstandingRows, leads, users] = await Promise.all([
+  const [statusRows, disbursedRows, collectedRows, outstandingRows, leads, users, active] = await Promise.all([
     Loan.aggregate<{ _id: string; n: number }>([{ $group: { _id: '$status', n: { $sum: 1 } } }]),
     Loan.aggregate<{ total: number }>([{ $match: { status: { $in: [LoanStatus.DISBURSED, LoanStatus.CLOSED] } } }, { $group: { _id: null, total: { $sum: '$principal' } } }]),
     Payment.aggregate<{ total: number }>([{ $match: { status: { $ne: 'REVERSED' } } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
@@ -67,12 +68,15 @@ export async function portfolioOverview() {
     ]),
     countLeads(),
     User.countDocuments({ role: Role.BORROWER }),
+    Loan.find({ status: LoanStatus.DISBURSED }, { status: 1, disbursedAt: 1, tenureDays: 1, totalRepayment: 1, amountPaid: 1 }).lean(),
   ]);
+  const overdue = active.filter((l) => dueInfo(l).overdue);
   const counts = Object.fromEntries(LOAN_STATUSES.map((s) => [s, statusRows.find((r) => r._id === s)?.n ?? 0]));
   return {
     counts,
     leads,
     borrowers: users,
+    overdue: { count: overdue.length, outstanding: toRupees(overdue.reduce((sum, l) => sum + l.totalRepayment - l.amountPaid, 0)) },
     money: {
       disbursed: toRupees(disbursedRows[0]?.total ?? 0),
       collected: toRupees(collectedRows[0]?.total ?? 0),

@@ -6,6 +6,7 @@ import { PaymentPanel } from '@/components/dashboard/PaymentPanel';
 import { QueueSearch } from '@/components/dashboard/QueueSearch';
 import { RefreshButton } from '@/components/dashboard/RefreshButton';
 import { useQueue } from '@/components/dashboard/useQueue';
+import { DueBadge } from '@/components/loan/DueBadge';
 import { LoanDetailsDrawer } from '@/components/loan/LoanDetails';
 import { Alert, Button, cx, EmptyState, Panel, SkeletonCards, StatusBadge } from '@/components/ui';
 import { useCountUp } from '@/hooks/useCountUp';
@@ -101,16 +102,21 @@ export default function CollectionPage() {
         const paidShare = (loan.amountPaid / loan.totalRepayment) * 100;
         const open = openId === loan.id;
         return (
-          <Panel key={loan.id} className={cx('anim-rise p-5', flashId === loan.id && 'anim-flash')} style={{ '--i': i } as React.CSSProperties}>
+          <Panel key={loan.id} className={cx('anim-rise p-5', loan.overdue && 'border-rust/40', flashId === loan.id && 'anim-flash')} style={{ '--i': i } as React.CSSProperties}>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="truncate font-semibold">{loan.applicant.fullName}</p>
                   <StatusBadge status={loan.status} />
+                  <DueBadge loan={loan} />
                 </div>
                 <p className="truncate text-sm text-ink-soft">{loan.borrower.email}</p>
                 <p className="text-sm text-ink-soft">
-                  {loan.status === 'CLOSED' && loan.closedAt ? `Closed ${formatDate(loan.closedAt)}` : loan.disbursedAt ? `Disbursed ${formatDate(loan.disbursedAt)}` : ''}
+                  {loan.status === 'CLOSED' && loan.closedAt
+                    ? `Closed ${formatDate(loan.closedAt)}`
+                    : loan.disbursedAt
+                      ? `Disbursed ${formatDate(loan.disbursedAt)}${loan.dueDate ? `, due ${formatDate(loan.dueDate)}` : ''}`
+                      : ''}
                 </p>
               </div>
               <div className="text-right">
