@@ -12,6 +12,10 @@
   --color-ledger: #0f6b4f;
   --color-ledger-dark: #0a5039;
   --color-ledger-wash: #e5f1ec;
+  /* Text that sits on ledger-wash. */
+  --color-ledger-ink: #0a5039;
+  /* Dimmed backdrop behind dialogs. */
+  --color-scrim: rgb(15 23 32 / 0.45);
   --color-saffron: #e8a33d;
   --color-saffron-ink: #8a5a10;
   --color-saffron-wash: #fcf1df;
@@ -26,6 +30,62 @@
 html {
   background: var(--color-paper);
   color: var(--color-ink);
+  color-scheme: light;
+  --shimmer: rgb(255 255 255 / 0.55);
+}
+
+/* Dark: chosen explicitly, or following the system unless Light was chosen. */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --shimmer: rgb(255 255 255 / 0.06);
+  --color-paper: #0e1318;
+  --color-surface: #161c23;
+  --color-ink: #e7ebef;
+  --color-ink-soft: #aab4c0;
+  --color-ink-faint: #7f8a97;
+  --color-line: #252e38;
+  --color-line-strong: #36414d;
+  --color-ledger: #1f8a64;
+  --color-ledger-dark: #187152;
+  --color-ledger-wash: #123128;
+  --color-ledger-ink: #7fd3b2;
+  --color-saffron-ink: #f2c37c;
+  --color-saffron-wash: #3a2c14;
+  --color-rust: #df6f58;
+  --color-rust-wash: #3a1d18;
+  --color-sky-ink: #93bde4;
+  --color-sky-wash: #172a3d;
+  --color-scrim: rgb(0 0 0 / 0.6);
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) {
+    color-scheme: dark;
+    --shimmer: rgb(255 255 255 / 0.06);
+    --color-paper: #0e1318;
+    --color-surface: #161c23;
+    --color-ink: #e7ebef;
+    --color-ink-soft: #aab4c0;
+    --color-ink-faint: #7f8a97;
+    --color-line: #252e38;
+    --color-line-strong: #36414d;
+    --color-ledger: #1f8a64;
+    --color-ledger-dark: #187152;
+    --color-ledger-wash: #123128;
+    --color-ledger-ink: #7fd3b2;
+    --color-saffron-ink: #f2c37c;
+    --color-saffron-wash: #3a2c14;
+    --color-rust: #df6f58;
+    --color-rust-wash: #3a1d18;
+    --color-sky-ink: #93bde4;
+    --color-sky-wash: #172a3d;
+    --color-scrim: rgb(0 0 0 / 0.6);
+  }
+}
+
+/* Smooth hand-off when the theme changes. */
+html, body, section, header, dialog, input, select, textarea, button {
+  transition-property: background-color, border-color, color;
+  transition-duration: 0.2s;
 }
 
 body {
@@ -108,7 +168,7 @@ dialog.drawer[open] { animation: slide-in 0.3s cubic-bezier(0.2, 0.7, 0.2, 1); }
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent);
+  background: linear-gradient(90deg, transparent, var(--shimmer), transparent);
   animation: shimmer 1.3s infinite;
 }
 

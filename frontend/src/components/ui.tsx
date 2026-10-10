@@ -89,7 +89,7 @@ export function SelectInput({ invalid, className, ...props }: SelectHTMLAttribut
 export function Alert({ tone = 'error', title, children }: { tone?: 'error' | 'success' | 'info'; title?: string; children?: ReactNode }) {
   const tones = {
     error: 'border-rust/30 bg-rust-wash text-rust',
-    success: 'border-ledger/30 bg-ledger-wash text-ledger-dark',
+    success: 'border-ledger/30 bg-ledger-wash text-ledger-ink',
     info: 'border-sky-ink/20 bg-sky-wash text-sky-ink',
   };
   return (
@@ -103,7 +103,7 @@ export function Alert({ tone = 'error', title, children }: { tone?: 'error' | 's
 const statusStyles: Record<LoanStatus, { label: string; className: string }> = {
   APPLIED: { label: 'Applied', className: 'bg-saffron-wash text-saffron-ink' },
   SANCTIONED: { label: 'Sanctioned', className: 'bg-sky-wash text-sky-ink' },
-  DISBURSED: { label: 'Disbursed', className: 'bg-ledger-wash text-ledger-dark' },
+  DISBURSED: { label: 'Disbursed', className: 'bg-ledger-wash text-ledger-ink' },
   CLOSED: { label: 'Closed', className: 'bg-ink/8 text-ink-soft' },
   REJECTED: { label: 'Rejected', className: 'bg-rust-wash text-rust' },
 };
@@ -173,7 +173,7 @@ export function Drawer({ open, onClose, title, children }: { open: boolean; onCl
       ref={ref}
       onClose={onClose}
       onClick={(e) => e.target === ref.current && onClose()}
-      className="drawer fixed inset-y-0 right-0 left-auto m-0 h-full max-h-none w-full max-w-xl border-l border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-ink/40"
+      className="drawer fixed inset-y-0 right-0 left-auto m-0 h-full max-h-none w-full max-w-xl border-l border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-scrim"
     >
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
@@ -205,7 +205,7 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
       ref={ref}
       onClose={onClose}
       onClick={(e) => e.target === ref.current && onClose()}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border border-line bg-surface p-0 text-ink shadow-xl backdrop:bg-ink/40"
+      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border border-line bg-surface p-0 text-ink shadow-xl backdrop:bg-scrim"
     >
       <div className="p-6">
         <h2 className="text-lg font-semibold">{title}</h2>

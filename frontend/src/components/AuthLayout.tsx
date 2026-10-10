@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Brand } from './Brand';
+import { ThemeToggle } from './ThemeToggle';
 
 export function AuthLayout({ title, intro, children }: { title: string; intro: string; children: ReactNode }) {
   return (
@@ -14,7 +15,8 @@ export function AuthLayout({ title, intro, children }: { title: string; intro: s
         </div>
         <p className="text-sm text-white/60">Simple interest, charged only for the days you borrow.</p>
       </aside>
-      <div className="flex flex-col justify-center px-4 py-10 sm:px-10">
+      <div className="relative flex flex-col justify-center px-4 py-10 sm:px-10">
+        <ThemeToggle className="absolute top-4 right-4" />
         <div className="anim-rise mx-auto w-full max-w-sm">
           <div className="mb-10 lg:hidden">
             <Brand href="/login" />

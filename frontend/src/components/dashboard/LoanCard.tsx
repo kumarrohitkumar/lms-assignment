@@ -30,7 +30,7 @@ export function LoanCard({
               <span
                 className={cx(
                   'inline-flex rounded-full px-2 py-0.5 text-xs font-medium',
-                  passed === total ? 'bg-ledger-wash text-ledger-dark' : 'bg-rust-wash text-rust',
+                  passed === total ? 'bg-ledger-wash text-ledger-ink' : 'bg-rust-wash text-rust',
                 )}
               >
                 {passed}/{total} checks passed

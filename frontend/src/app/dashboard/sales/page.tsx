@@ -12,7 +12,7 @@ const stages: Record<BorrowerStage, { label: string; className: string; next: st
   REGISTERED: { label: 'Signed up', className: 'bg-ink/8 text-ink-soft', next: 'Needs to fill personal details' },
   BRE_FAILED: { label: 'Not eligible', className: 'bg-rust-wash text-rust', next: 'Failed the eligibility check' },
   DETAILS_SUBMITTED: { label: 'Eligible', className: 'bg-sky-wash text-sky-ink', next: 'Needs to upload a salary slip' },
-  SLIP_UPLOADED: { label: 'Ready to apply', className: 'bg-ledger-wash text-ledger-dark', next: 'Only the loan amount is left' },
+  SLIP_UPLOADED: { label: 'Ready to apply', className: 'bg-ledger-wash text-ledger-ink', next: 'Only the loan amount is left' },
 };
 
 function CountUp({ value }: { value: number }) {

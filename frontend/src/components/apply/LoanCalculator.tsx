@@ -100,7 +100,7 @@ export function LoanCalculator({ onApply, submitting }: Props) {
       </div>
 
       <div aria-live="polite" className="receipt relative rounded-b-lg bg-ledger-wash px-6 pb-6 pt-7">
-        <p className="text-sm font-semibold text-ledger-dark">Your repayment</p>
+        <p className="text-sm font-semibold text-ledger-ink">Your repayment</p>
         <dl className="tabular mt-4 space-y-3 text-sm">
           <div className="flex justify-between gap-4">
             <dt className="text-ink-soft">Amount borrowed</dt>
@@ -116,7 +116,7 @@ export function LoanCalculator({ onApply, submitting }: Props) {
           </div>
           <div className="border-t border-dashed border-ledger/40 pt-3">
             <dt className="text-ink-soft">Total to repay</dt>
-            <dd data-testid="total" className="mt-1 text-3xl font-bold tracking-tight text-ledger-dark">
+            <dd data-testid="total" className="mt-1 text-3xl font-bold tracking-tight text-ledger-ink">
               {formatINR(totalRepayment)}
             </dd>
           </div>

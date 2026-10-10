@@ -13,7 +13,7 @@ export function Stepper({ current, completed }: { current: number; completed: nu
             <span
               className={cx(
                 'tabular grid size-7 shrink-0 place-items-center rounded-full text-sm font-semibold',
-                active ? 'bg-ledger text-white' : done ? 'bg-ledger-wash text-ledger-dark' : 'border border-line-strong text-ink-faint',
+                active ? 'bg-ledger text-white' : done ? 'bg-ledger-wash text-ledger-ink' : 'border border-line-strong text-ink-faint',
               )}
             >
               {done && !active ? '✓' : i + 1}

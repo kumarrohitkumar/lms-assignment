@@ -2,6 +2,7 @@
 
 import { useSession } from './SessionProvider';
 import { Brand } from './Brand';
+import { ThemeToggle } from './ThemeToggle';
 import { Button } from './ui';
 
 const roleLabel: Record<string, string> = {
@@ -26,6 +27,7 @@ export function AppHeader({ subtitle, homeHref }: { subtitle: string; homeHref: 
               <p className="text-ink-soft">{roleLabel[user.role]}</p>
             </div>
           )}
+          <ThemeToggle />
           <Button variant="secondary" onClick={logout}>
             Log out
           </Button>
