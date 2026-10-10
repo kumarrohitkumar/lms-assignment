@@ -15,7 +15,7 @@ const ENDPOINTS: [string, string][] = [
   ['get', '/api/disbursement/loans'], ['post', '/api/disbursement/loans/{id}/disburse'], ['post', '/api/disbursement/loans/{id}/reject'],
   ['get', '/api/collection/loans'], ['get', '/api/collection/loans/{id}/payments'], ['post', '/api/collection/loans/{id}/payments'],
   ['post', '/api/collection/payments/{id}/reverse'],
-  ['get', '/api/decisions/rejection-categories'], ['get', '/api/admin/overview'], ['get', '/api/health'],
+  ['get', '/api/decisions/rejection-categories'], ['get', '/api/sanction/decisions'], ['get', '/api/disbursement/decisions'], ['get', '/api/admin/overview'], ['get', '/api/health'],
 ];
 
 describe('API documentation', () => {

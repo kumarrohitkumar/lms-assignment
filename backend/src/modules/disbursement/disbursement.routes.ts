@@ -6,6 +6,7 @@ import { authenticate } from '../../middleware/authenticate';
 import { authorize } from '../../middleware/authorize';
 import { validateBody } from '../../middleware/validate';
 import { disburseSchema, type RejectInput, rejectSchema } from '../decisions/decisions.schemas';
+import { listStageDecisions } from '../loans/decided.service';
 import { listLoansByStatus, rejectLoan, transitionLoan } from '../loans/loan.service';
 
 export const disbursementRouter = Router();
@@ -14,6 +15,10 @@ disbursementRouter.use(authenticate, authorize(...MODULE_ROLES.disbursement));
 disbursementRouter.get('/loans', async (req, res) => {
   const loans = await listLoansByStatus(LoanStatus.SANCTIONED, req.query.q);
   res.json({ loans: loans.map(serializeLoan) });
+});
+
+disbursementRouter.get('/decisions', async (req, res) => {
+  res.json(await listStageDecisions('DISBURSEMENT', req.query.q));
 });
 
 disbursementRouter.post('/loans/:id/disburse', validateBody(disburseSchema), async (req, res) => {

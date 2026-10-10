@@ -87,6 +87,21 @@ export interface Loan {
   createdAt: string;
 }
 
+/** What a stage decided about a loan it has finished with. */
+export interface Decision {
+  outcome: 'APPROVED' | 'DISBURSED' | 'REJECTED';
+  at: string;
+  by: Actor | null;
+  /** Rejection category label, null unless rejected. */
+  reason: string | null;
+  /** Free-text remark (approval/payout) or rejection note. */
+  note: string | null;
+  /** Bank transfer reference for a payout. */
+  reference: string | null;
+}
+
+export type DecidedLoan = Loan & { decision: Decision };
+
 export interface Lead {
   id: string;
   name: string;

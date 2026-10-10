@@ -77,7 +77,7 @@ export default function OverviewPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { label: 'Disbursed', value: data.money.disbursed, note: 'Principal paid out' },
-              { label: 'Collected', value: data.money.collected, note: 'Repayments received' },
+              { label: 'Collected', value: data.money.collected, note: 'Repayments received, principal + interest' },
               { label: 'Outstanding', value: data.money.outstanding, note: 'Still due on active loans' },
               {
                 label: 'Overdue',

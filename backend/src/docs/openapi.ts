@@ -151,6 +151,14 @@ export const openApiDocument = {
     },
 
     '/api/sanction/loans': { get: { ...staff('Sanction'), summary: 'Applications waiting for a decision (APPLIED)', parameters: [qParam], responses: { 200: loans('Queue'), 403: E403 } } },
+    '/api/sanction/decisions': {
+      get: {
+        ...staff('Sanction'),
+        summary: 'Applications already approved or rejected, newest first, with who decided, when and why',
+        parameters: [qParam],
+        responses: { 200: loans('Decided loans, each with a decision { outcome, at, by, reason, note, reference } and counts { approved, rejected }'), 403: E403 },
+      },
+    },
     '/api/sanction/loans/{id}/approve': {
       post: {
         ...staff('Sanction'),
@@ -171,6 +179,14 @@ export const openApiDocument = {
     },
 
     '/api/disbursement/loans': { get: { ...staff('Disbursement'), summary: 'Sanctioned loans ready to pay out', parameters: [qParam], responses: { 200: loans('Queue'), 403: E403 } } },
+    '/api/disbursement/decisions': {
+      get: {
+        ...staff('Disbursement'),
+        summary: 'Loans already paid out or stopped, newest first, with the bank reference or the reason',
+        parameters: [qParam],
+        responses: { 200: loans('Decided loans, each with a decision { outcome, at, by, reason, note, reference } and counts { approved, rejected }'), 403: E403 },
+      },
+    },
     '/api/disbursement/loans/{id}/disburse': {
       post: {
         ...staff('Disbursement'),

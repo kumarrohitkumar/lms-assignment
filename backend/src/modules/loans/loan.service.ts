@@ -5,7 +5,7 @@ import { type Actor, assertTransition, LoanStatus } from '../../lib/loanStatus';
 import { Loan, type LoanDocument } from '../../models/Loan';
 import { User } from '../../models/User';
 
-const BORROWER_FIELDS = 'name email';
+export const BORROWER_FIELDS = 'name email';
 
 export async function findLoanOrThrow(id: string): Promise<LoanDocument> {
   const loan = await Loan.findById(id);
