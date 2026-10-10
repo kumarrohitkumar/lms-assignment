@@ -57,6 +57,17 @@ describe('<Timeline>', () => {
     expect(items[4]).toHaveTextContent('Closed');
     expect(items[4]).toHaveTextContent('Automatic');
   });
+
+  it('marks only the latest event as the current step', () => {
+    const events: TimelineEvent[] = [
+      { type: 'STATUS', at: '2026-10-10T05:00:00Z', from: null, to: 'APPLIED', note: null, actor: { id: 'b', name: 'Asha Rao', role: 'BORROWER' } },
+      { type: 'STATUS', at: '2026-10-10T06:00:00Z', from: 'APPLIED', to: 'SANCTIONED', note: null, actor: { id: 's', name: 'Sana', role: 'SANCTION' } },
+    ];
+    render(<Timeline events={events} />);
+    const items = screen.getAllByRole('listitem');
+    expect(items[0]).not.toHaveAttribute('aria-current');
+    expect(items[1]).toHaveAttribute('aria-current', 'step');
+  });
 });
 
 describe('<RejectDialog>', () => {

@@ -174,6 +174,29 @@ dialog.drawer[open] { animation: slide-in 0.3s cubic-bezier(0.2, 0.7, 0.2, 1); }
 
 .check-draw { stroke-dasharray: 24; animation: draw 0.4s ease-out both; animation-delay: calc(var(--i, 0) * 60ms + 120ms); }
 
+/* Loan history: the rail draws down, each dot lands as the rail reaches it, the latest one pulses a few times. */
+@keyframes rail-draw { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes dot-land { 0% { transform: scale(0); } 70% { transform: scale(1.35); } 100% { transform: scale(1); } }
+@keyframes dot-ping { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(2.8); opacity: 0; } }
+.timeline-rail { transform-origin: top; animation: rail-draw linear both; }
+.timeline-item {
+  animation: rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * var(--step, 90ms));
+}
+.timeline-dot { animation: dot-land 0.4s cubic-bezier(0.3, 1.4, 0.5, 1) both; animation-delay: calc(var(--i, 0) * var(--step, 90ms) + 60ms); }
+.timeline:not([data-playing]) :is(.timeline-rail, .timeline-item, .timeline-dot),
+.timeline:not([data-playing]) .timeline-now::after { animation-play-state: paused; }
+.timeline-now::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: dot-ping 1.6s ease-out 3;
+  animation-delay: calc(var(--i, 0) * var(--step, 90ms) + 450ms);
+  opacity: 0;
+}
+
 /* Buttons respond to presses. */
 button:not(:disabled):active { transform: translateY(1px); }
 
