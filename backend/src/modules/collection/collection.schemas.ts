@@ -19,4 +19,8 @@ export const paymentSchema = z.object({
     .refine((v) => v <= todayIst(), 'Payment date cannot be in the future'),
 });
 
+export const reverseSchema = z.object({
+  reason: z.string({ error: 'Give a reason for the reversal' }).trim().min(3, 'Give a reason of at least 3 characters').max(300),
+});
+
 export type PaymentInput = z.infer<typeof paymentSchema>;

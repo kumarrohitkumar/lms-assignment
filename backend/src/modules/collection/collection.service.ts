@@ -1,6 +1,6 @@
 import type { Types } from 'mongoose';
 import { istDateOf } from '../../lib/dates';
-import { AppError, conflict } from '../../lib/errors';
+import { AppError, conflict, notFound } from '../../lib/errors';
 import { assertTransition, LoanStatus } from '../../lib/loanStatus';
 import { toPaise, toRupees } from '../../lib/money';
 import { Loan } from '../../models/Loan';
@@ -98,4 +98,51 @@ export async function recordPayment(loanId: string, input: PaymentInput, recorde
   }
 
   return { loan: updated, payment };
+}
+
+/**
+ * Reverses a received payment (bounced, recalled, recorded against the wrong loan). The payment is kept and
+ * marked REVERSED; the loan's balance goes back up and a loan the payment had closed is reopened.
+ */
+export async function reversePayment(paymentId: string, reason: string, actor: Types.ObjectId) {
+  const payment = await Payment.findById(paymentId);
+  if (!payment) throw notFound('Payment');
+
+  const now = new Date();
+  const marked = await Payment.findOneAndUpdate(
+    { _id: payment._id, status: 'RECEIVED' },
+    { $set: { status: 'REVERSED', reversal: { reason, by: actor, at: now } } },
+    { returnDocument: 'after' },
+  );
+  if (!marked) throw conflict('This payment has already been reversed', 'ALREADY_REVERSED');
+
+  assertTransition(LoanStatus.CLOSED, LoanStatus.DISBURSED, 'SYSTEM');
+  const wasClosed = { $eq: ['$status', LoanStatus.CLOSED] };
+  const reopenEntry = { from: LoanStatus.CLOSED, to: LoanStatus.DISBURSED, by: actor, at: now, note: `Payment ${payment.utr} reversed: ${reason}` };
+
+  let loan;
+  try {
+    loan = await Loan.findOneAndUpdate(
+      { _id: payment.loan, status: { $in: [LoanStatus.DISBURSED, LoanStatus.CLOSED] }, amountPaid: { $gte: payment.amount } },
+      [
+        {
+          $set: {
+            amountPaid: { $subtract: ['$amountPaid', payment.amount] },
+            statusHistory: { $cond: [wasClosed, { $concatArrays: ['$statusHistory', [{ $literal: reopenEntry }]] }, '$statusHistory'] },
+            closedAt: { $cond: [wasClosed, null, '$closedAt'] },
+            status: { $cond: [wasClosed, LoanStatus.DISBURSED, '$status'] },
+          },
+        },
+      ],
+      { returnDocument: 'after', updatePipeline: true },
+    ).populate('borrower', 'name email');
+  } catch (err) {
+    await Payment.updateOne({ _id: payment._id }, { $set: { status: 'RECEIVED', reversal: null } });
+    throw err;
+  }
+  if (!loan) {
+    await Payment.updateOne({ _id: payment._id }, { $set: { status: 'RECEIVED', reversal: null } });
+    throw conflict('The loan is not in a state where this payment can be reversed', 'INVALID_TRANSITION');
+  }
+  return { loan, payment: marked };
 }

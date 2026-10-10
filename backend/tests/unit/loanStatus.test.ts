@@ -20,6 +20,8 @@ describe('loan status machine', () => {
     [LoanStatus.SANCTIONED, LoanStatus.DISBURSED, Role.DISBURSEMENT],
     [LoanStatus.SANCTIONED, LoanStatus.DISBURSED, Role.ADMIN],
     [LoanStatus.DISBURSED, LoanStatus.CLOSED, 'SYSTEM'],
+    [LoanStatus.CLOSED, LoanStatus.DISBURSED, 'SYSTEM'],
+    [LoanStatus.SANCTIONED, LoanStatus.REJECTED, Role.DISBURSEMENT],
   ] as const)('allows %s → %s by %s', (from, to, actor) => {
     expect(() => assertTransition(from, to, actor)).not.toThrow();
   });
@@ -28,7 +30,6 @@ describe('loan status machine', () => {
     [LoanStatus.APPLIED, LoanStatus.DISBURSED],
     [LoanStatus.SANCTIONED, LoanStatus.SANCTIONED],
     [LoanStatus.REJECTED, LoanStatus.SANCTIONED],
-    [LoanStatus.CLOSED, LoanStatus.DISBURSED],
     [LoanStatus.DISBURSED, LoanStatus.SANCTIONED],
   ] as const)('rejects %s → %s with 409', (from, to) => {
     const err = errorOf(() => assertTransition(from, to, Role.ADMIN));
@@ -39,5 +40,7 @@ describe('loan status machine', () => {
   it('rejects a valid transition by the wrong actor with 403', () => {
     expect(errorOf(() => assertTransition(LoanStatus.APPLIED, LoanStatus.SANCTIONED, Role.DISBURSEMENT)).status).toBe(403);
     expect(errorOf(() => assertTransition(LoanStatus.DISBURSED, LoanStatus.CLOSED, Role.COLLECTION)).status).toBe(403);
+    expect(errorOf(() => assertTransition(LoanStatus.CLOSED, LoanStatus.DISBURSED, Role.ADMIN)).status).toBe(403);
+    expect(errorOf(() => assertTransition(LoanStatus.SANCTIONED, LoanStatus.REJECTED, Role.SANCTION)).status).toBe(403);
   });
 });

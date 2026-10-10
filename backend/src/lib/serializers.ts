@@ -114,7 +114,17 @@ export function serializeLoan(loan: {
   };
 }
 
-export function serializePayment(p: { _id: unknown; loan: unknown; utr: string; amount: number; paymentDate: Date; recordedBy: unknown; createdAt?: Date }) {
+export function serializePayment(p: {
+  _id: unknown;
+  loan: unknown;
+  utr: string;
+  amount: number;
+  paymentDate: Date;
+  recordedBy: unknown;
+  status?: string | null;
+  reversal?: { reason: string; by: unknown; at: Date } | null;
+  createdAt?: Date;
+}) {
   return {
     id: String(p._id),
     loan: String(p.loan),
@@ -122,6 +132,8 @@ export function serializePayment(p: { _id: unknown; loan: unknown; utr: string; 
     amount: toRupees(p.amount),
     paymentDate: isoDate(p.paymentDate),
     recordedBy: String(p.recordedBy),
+    status: p.status ?? 'RECEIVED',
+    reversal: p.reversal ? { reason: p.reversal.reason, by: String(p.reversal.by), at: p.reversal.at } : null,
     createdAt: p.createdAt,
   };
 }

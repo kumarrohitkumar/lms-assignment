@@ -24,6 +24,8 @@ const TRANSITIONS: { from: LoanStatus; to: LoanStatus; actors: Actor[] }[] = [
   // Disbursement can still stop a sanctioned loan (bank details, KYC, borrower withdrew).
   { from: LoanStatus.SANCTIONED, to: LoanStatus.REJECTED, actors: [Role.DISBURSEMENT, Role.ADMIN] },
   { from: LoanStatus.DISBURSED, to: LoanStatus.CLOSED, actors: ['SYSTEM'] },
+  // Reversing a payment that had settled the loan reopens it.
+  { from: LoanStatus.CLOSED, to: LoanStatus.DISBURSED, actors: ['SYSTEM'] },
 ];
 
 export function assertTransition(from: LoanStatus, to: LoanStatus, actor: Actor): void {

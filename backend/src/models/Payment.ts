@@ -9,6 +9,15 @@ const paymentSchema = new Schema(
     amount: { type: Number, required: true, min: 1 },
     paymentDate: { type: Date, required: true },
     recordedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    /** Reversed payments are kept (and keep their UTR) so the audit trail stays complete. */
+    status: { type: String, enum: ['RECEIVED', 'REVERSED'], default: 'RECEIVED', required: true },
+    reversal: {
+      type: new Schema(
+        { reason: { type: String, required: true }, by: { type: Schema.Types.ObjectId, ref: 'User', required: true }, at: { type: Date, required: true } },
+        { _id: false },
+      ),
+      default: null,
+    },
   },
   { timestamps: true },
 );
