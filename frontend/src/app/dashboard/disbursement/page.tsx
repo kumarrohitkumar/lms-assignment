@@ -4,6 +4,7 @@ import { type FormEvent, useState } from 'react';
 import { LoanCard } from '@/components/dashboard/LoanCard';
 import { ModulePage } from '@/components/dashboard/ModulePage';
 import { QueueSearch } from '@/components/dashboard/QueueSearch';
+import { QueueSummary } from '@/components/dashboard/QueueSummary';
 import { RefreshButton } from '@/components/dashboard/RefreshButton';
 import { useQueue } from '@/components/dashboard/useQueue';
 import { LoanDetailsDrawer } from '@/components/loan/LoanDetails';
@@ -11,6 +12,7 @@ import { RejectDialog } from '@/components/loan/RejectDialog';
 import { Alert, Button, EmptyState, Field, Modal, SkeletonCards, TextInput } from '@/components/ui';
 import { api, ApiError, errorMessage } from '@/lib/api';
 import { formatDate, formatINR } from '@/lib/format';
+import { queueStats } from '@/lib/queueStats';
 import type { Loan } from '@/lib/types';
 
 export default function DisbursementPage() {
@@ -82,6 +84,14 @@ export default function DisbursementPage() {
         </div>
       )}
       {error && <Alert>{error}</Alert>}
+      {loans && (
+        <QueueSummary
+          tiles={[
+            { label: 'Ready to pay out', value: queueStats(loans).count },
+            { label: 'Total to disburse', value: queueStats(loans).principal, money: true },
+          ]}
+        />
+      )}
       {!loans && !error && <SkeletonCards />}
       {loans?.length === 0 && (
         <EmptyState title={q ? 'No loans match your search' : 'Nothing to disburse'}>

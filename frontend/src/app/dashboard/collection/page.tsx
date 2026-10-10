@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ModulePage } from '@/components/dashboard/ModulePage';
 import { PaymentPanel } from '@/components/dashboard/PaymentPanel';
 import { QueueSearch } from '@/components/dashboard/QueueSearch';
+import { QueueSummary } from '@/components/dashboard/QueueSummary';
 import { RefreshButton } from '@/components/dashboard/RefreshButton';
 import { useQueue } from '@/components/dashboard/useQueue';
 import { DueBadge } from '@/components/loan/DueBadge';
@@ -11,6 +12,7 @@ import { LoanDetailsDrawer } from '@/components/loan/LoanDetails';
 import { Alert, Button, cx, EmptyState, Panel, SkeletonCards, StatusBadge } from '@/components/ui';
 import { useCountUp } from '@/hooks/useCountUp';
 import { formatDate, formatINR } from '@/lib/format';
+import { queueStats } from '@/lib/queueStats';
 import type { Loan } from '@/lib/types';
 
 type View = 'active' | 'closed';
@@ -92,6 +94,23 @@ export default function CollectionPage() {
         </div>
       )}
       {error && <Alert>{error}</Alert>}
+      {loans && (
+        <QueueSummary
+          tiles={
+            view === 'active'
+              ? [
+                  { label: 'Active loans', value: queueStats(loans).count },
+                  { label: 'Outstanding', value: queueStats(loans).outstanding, money: true },
+                  { label: 'Overdue', value: queueStats(loans).overdue, tone: 'alert' },
+                  { label: 'Due within 7 days', value: queueStats(loans).dueThisWeek, tone: 'warn' },
+                ]
+              : [
+                  { label: 'Closed loans', value: queueStats(loans).count },
+                  { label: 'Principal repaid', value: queueStats(loans).principal, money: true },
+                ]
+          }
+        />
+      )}
       {!loans && !error && <SkeletonCards />}
       {loans?.length === 0 && (
         <EmptyState title={q ? 'No loans match your search' : view === 'active' ? 'No active loans' : 'No closed loans yet'}>

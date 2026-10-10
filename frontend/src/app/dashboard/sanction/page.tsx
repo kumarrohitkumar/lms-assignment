@@ -4,6 +4,7 @@ import { type FormEvent, useState } from 'react';
 import { LoanCard } from '@/components/dashboard/LoanCard';
 import { ModulePage } from '@/components/dashboard/ModulePage';
 import { QueueSearch } from '@/components/dashboard/QueueSearch';
+import { QueueSummary } from '@/components/dashboard/QueueSummary';
 import { RefreshButton } from '@/components/dashboard/RefreshButton';
 import { useQueue } from '@/components/dashboard/useQueue';
 import { EligibilityChecklist } from '@/components/loan/EligibilityChecklist';
@@ -12,6 +13,7 @@ import { RejectDialog } from '@/components/loan/RejectDialog';
 import { Alert, Button, EmptyState, Modal, SkeletonCards } from '@/components/ui';
 import { api, errorMessage } from '@/lib/api';
 import { formatINR } from '@/lib/format';
+import { queueStats } from '@/lib/queueStats';
 import type { Loan } from '@/lib/types';
 
 export default function SanctionPage() {
@@ -71,6 +73,14 @@ export default function SanctionPage() {
         </div>
       )}
       {error && <Alert>{error}</Alert>}
+      {loans && (
+        <QueueSummary
+          tiles={[
+            { label: 'Applications waiting', value: queueStats(loans).count },
+            { label: 'Total requested', value: queueStats(loans).principal, money: true },
+          ]}
+        />
+      )}
       {!loans && !error && <SkeletonCards />}
       {loans?.length === 0 && (
         <EmptyState title={q ? 'No applications match your search' : 'No applications waiting'}>

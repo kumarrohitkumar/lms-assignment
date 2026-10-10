@@ -22,7 +22,7 @@ export function ProfileButton() {
       >
         <span className="hidden text-right text-sm leading-tight sm:block">
           <span className="block font-semibold">{user.name}</span>
-          <span className="block text-ink-soft">{ROLE_LABEL[user.role]}</span>
+          {user.name.trim().toLowerCase() !== ROLE_LABEL[user.role].toLowerCase() && <span className="block text-ink-soft">{ROLE_LABEL[user.role]}</span>}
         </span>
         <span className="grid size-9 place-items-center rounded-full bg-ledger text-sm font-bold text-white">{initials(user.name)}</span>
       </button>
