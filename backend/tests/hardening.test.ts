@@ -114,3 +114,11 @@ describe('login rate-limit key', () => {
     expect(loginRateKey({ ip: '10.0.0.1', body: undefined })).toBe('10.0.0.1|');
   });
 });
+
+describe('API caching', () => {
+  it('marks API responses as not cacheable, so lists are always fresh and never shared', async () => {
+    const { cookie } = await loginAs(app, 'SALES');
+    const res = await request(app).get('/api/sales/leads').set('Cookie', cookie);
+    expect(res.headers['cache-control']).toBe('no-store');
+  });
+});

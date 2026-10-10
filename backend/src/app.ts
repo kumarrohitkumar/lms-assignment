@@ -27,6 +27,11 @@ export function createApp({ storage, corsOrigins = [], trustProxyHops = 1 }: App
   app.use(cors({ origin: corsOrigins, credentials: true }));
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());
+  // Responses are per-user and change as staff act on loans: never cache them in browsers or proxies.
+  app.use((_req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+  });
 
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok' });

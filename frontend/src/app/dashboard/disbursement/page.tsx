@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { LoanCard } from '@/components/dashboard/LoanCard';
 import { ModulePage } from '@/components/dashboard/ModulePage';
+import { RefreshButton } from '@/components/dashboard/RefreshButton';
 import { useQueue } from '@/components/dashboard/useQueue';
 import { Alert, Button, EmptyState, LoadingBlock, Modal } from '@/components/ui';
 import { api, errorMessage } from '@/lib/api';
@@ -10,7 +11,7 @@ import { formatDate, formatINR } from '@/lib/format';
 import type { Loan } from '@/lib/types';
 
 export default function DisbursementPage() {
-  const { items: loans, error, reload, remove } = useQueue<Loan>('/disbursement/loans', 'loans');
+  const { items: loans, error, reload, refreshing, updatedAt, remove } = useQueue<Loan>('/disbursement/loans', 'loans');
   const [confirming, setConfirming] = useState<Loan | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
@@ -32,7 +33,13 @@ export default function DisbursementPage() {
   }
 
   return (
-    <ModulePage module="disbursement" actions={<Button variant="secondary" onClick={reload}>Refresh</Button>}>
+    <ModulePage
+      module="disbursement"
+      actions={<RefreshButton onRefresh={() => {
+          setNotice(null);
+          reload();
+        }} refreshing={refreshing} updatedAt={updatedAt} />}
+    >
       {notice && <Alert tone={notice.tone}>{notice.text}</Alert>}
       {error && <Alert>{error}</Alert>}
       {!loans && !error && <LoadingBlock label="Loading sanctioned loans" />}

@@ -3,6 +3,7 @@
 import { type FormEvent, useState } from 'react';
 import { LoanCard } from '@/components/dashboard/LoanCard';
 import { ModulePage } from '@/components/dashboard/ModulePage';
+import { RefreshButton } from '@/components/dashboard/RefreshButton';
 import { useQueue } from '@/components/dashboard/useQueue';
 import { Alert, Button, EmptyState, Field, LoadingBlock, Modal } from '@/components/ui';
 import { api, errorMessage } from '@/lib/api';
@@ -10,7 +11,7 @@ import { formatINR } from '@/lib/format';
 import type { Loan } from '@/lib/types';
 
 export default function SanctionPage() {
-  const { items: loans, error, reload, remove } = useQueue<Loan>('/sanction/loans', 'loans');
+  const { items: loans, error, reload, refreshing, updatedAt, remove } = useQueue<Loan>('/sanction/loans', 'loans');
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const [rejecting, setRejecting] = useState<Loan | null>(null);
@@ -56,7 +57,13 @@ export default function SanctionPage() {
   }
 
   return (
-    <ModulePage module="sanction" actions={<Button variant="secondary" onClick={reload}>Refresh</Button>}>
+    <ModulePage
+      module="sanction"
+      actions={<RefreshButton onRefresh={() => {
+          setNotice(null);
+          reload();
+        }} refreshing={refreshing} updatedAt={updatedAt} />}
+    >
       {notice && <Alert tone={notice.tone}>{notice.text}</Alert>}
       {error && <Alert>{error}</Alert>}
       {!loans && !error && <LoadingBlock label="Loading applications" />}

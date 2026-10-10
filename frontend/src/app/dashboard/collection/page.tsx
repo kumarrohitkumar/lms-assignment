@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ModulePage } from '@/components/dashboard/ModulePage';
+import { RefreshButton } from '@/components/dashboard/RefreshButton';
 import { PaymentPanel } from '@/components/dashboard/PaymentPanel';
 import { useQueue } from '@/components/dashboard/useQueue';
 import { Alert, Button, EmptyState, LoadingBlock, Panel } from '@/components/ui';
@@ -9,7 +10,7 @@ import { formatDate, formatINR } from '@/lib/format';
 import type { Loan } from '@/lib/types';
 
 export default function CollectionPage() {
-  const { items: loans, error, reload, remove, replace } = useQueue<Loan>('/collection/loans', 'loans');
+  const { items: loans, error, reload, refreshing, updatedAt, remove, replace } = useQueue<Loan>('/collection/loans', 'loans');
   const [openId, setOpenId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -24,7 +25,13 @@ export default function CollectionPage() {
   }
 
   return (
-    <ModulePage module="collection" actions={<Button variant="secondary" onClick={reload}>Refresh</Button>}>
+    <ModulePage
+      module="collection"
+      actions={<RefreshButton onRefresh={() => {
+          setNotice(null);
+          reload();
+        }} refreshing={refreshing} updatedAt={updatedAt} />}
+    >
       {notice && <Alert tone="success">{notice}</Alert>}
       {error && <Alert>{error}</Alert>}
       {!loans && !error && <LoadingBlock label="Loading active loans" />}

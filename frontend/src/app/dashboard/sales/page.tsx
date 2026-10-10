@@ -1,8 +1,9 @@
 'use client';
 
 import { ModulePage } from '@/components/dashboard/ModulePage';
+import { RefreshButton } from '@/components/dashboard/RefreshButton';
 import { useQueue } from '@/components/dashboard/useQueue';
-import { Alert, Button, EmptyState, LoadingBlock, Panel, cx } from '@/components/ui';
+import { Alert, EmptyState, LoadingBlock, Panel, cx } from '@/components/ui';
 import { employmentLabel, formatDate, formatINR } from '@/lib/format';
 import type { BorrowerStage, Lead } from '@/lib/types';
 
@@ -18,10 +19,13 @@ function StageBadge({ stage }: { stage: BorrowerStage }) {
 }
 
 export default function SalesPage() {
-  const { items: leads, error, reload } = useQueue<Lead>('/sales/leads', 'leads');
+  const { items: leads, error, reload, refreshing, updatedAt } = useQueue<Lead>('/sales/leads', 'leads');
 
   return (
-    <ModulePage module="sales" actions={<Button variant="secondary" onClick={reload}>Refresh</Button>}>
+    <ModulePage
+      module="sales"
+      actions={<RefreshButton onRefresh={reload} refreshing={refreshing} updatedAt={updatedAt} />}
+    >
       {error && <Alert>{error}</Alert>}
       {!leads && !error && <LoadingBlock label="Loading leads" />}
       {leads?.length === 0 && <EmptyState title="No open leads">Everyone who signed up has applied. New sign-ups will appear here.</EmptyState>}

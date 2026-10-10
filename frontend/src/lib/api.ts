@@ -21,6 +21,8 @@ export async function api<T>(path: string, options: { method?: string; body?: Bo
     res = await fetch(`/api${path}`, {
       method,
       credentials: 'same-origin',
+      // Loan queues change as colleagues act; never answer from the browser's HTTP cache.
+      cache: 'no-store',
       headers: body && !isForm ? { 'Content-Type': 'application/json' } : undefined,
       body: body ? (isForm ? (body as FormData) : JSON.stringify(body)) : undefined,
     });
