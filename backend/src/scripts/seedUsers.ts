@@ -27,3 +27,10 @@ export async function seedUsers() {
   );
   return SEED_ACCOUNTS;
 }
+
+/** First-run convenience: seeds the demo accounts only when there are no users at all. */
+export async function seedIfEmpty(): Promise<boolean> {
+  if (await User.exists({})) return false;
+  await seedUsers();
+  return true;
+}

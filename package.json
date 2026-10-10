@@ -3,13 +3,14 @@
   "private": true,
   "description": "Loan Management System — Next.js + Express + MongoDB",
   "scripts": {
-    "postinstall": "npm --prefix backend install && npm --prefix frontend install",
+    "postinstall": "npm --prefix backend install && npm --prefix frontend install && node scripts/setup-env.mjs",
     "dev": "concurrently -n api,web -c green,blue \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
     "seed": "npm --prefix backend run seed",
     "test": "npm --prefix backend test && npm --prefix frontend test",
     "typecheck": "npm --prefix backend run typecheck && npm --prefix frontend run typecheck",
     "lint": "npm --prefix frontend run lint",
-    "build": "npm --prefix backend run build && npm --prefix frontend run build"
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "setup": "node scripts/setup-env.mjs"
   },
   "devDependencies": {
     "concurrently": "^10.0.6"

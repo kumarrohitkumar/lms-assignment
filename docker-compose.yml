@@ -1,13 +1,46 @@
-# Optional: a local MongoDB for people who don't have one installed.
-#   docker compose up -d
+# Whole app with one command:   docker compose up --build
+# Then open http://localhost:3000 — demo accounts are created on first start (password: Password@123).
+# Only port 3000 is published, so a MongoDB already running on this machine does not get in the way.
 services:
   mongo:
     image: mongo:7
     restart: unless-stopped
-    ports:
-      - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      # Local, plain-HTTP setup: development mode keeps the session cookie usable on http://localhost.
+      NODE_ENV: development
+      PORT: "4000"
+      MONGO_URI: mongodb://mongo:27017/lms
+      JWT_SECRET: local-dev-only-secret-do-not-use-in-production
+      STORAGE_DRIVER: local
+      SEED_ON_START: "true"
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        BACKEND_URL: http://api:4000
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
 
 volumes:
   mongo-data:
+  uploads:

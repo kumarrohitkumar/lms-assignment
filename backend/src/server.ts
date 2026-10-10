@@ -1,12 +1,18 @@
 import mongoose from 'mongoose';
 import { createApp } from './app';
 import { env } from './config/env';
+import { SEED_PASSWORD, seedIfEmpty } from './scripts/seedUsers';
 import { createStorage } from './storage';
 
 async function main() {
   const config = env();
   await mongoose.connect(config.MONGO_URI);
   await Promise.all(Object.values(mongoose.models).map((model) => model.syncIndexes()));
+
+  const seedOnStart = config.SEED_ON_START ? config.SEED_ON_START === 'true' : config.NODE_ENV !== 'production';
+  if (seedOnStart && (await seedIfEmpty())) {
+    console.log(`Empty database: created the demo accounts (password ${SEED_PASSWORD}).`);
+  }
 
   const app = createApp({
     storage: createStorage(config),
