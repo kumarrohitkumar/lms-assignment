@@ -14,6 +14,19 @@ A lending platform where borrowers apply for personal loans and internal teams t
 | Auth     | JWT (httpOnly cookie) + bcrypt |
 | Tests    | Vitest, supertest, mongodb-memory-server, Testing Library |
 
+## Live demo
+
+**https://kosh-lms.vercel.app** — log in with any account from [Login credentials](#login-credentials) below.
+
+| Part | Where it runs |
+|---|---|
+| Web app | Vercel: `kosh-lms.vercel.app` |
+| API | Vercel serverless function: `kosh-lms-api.vercel.app` (try `/api/health`) |
+| Database | MongoDB Atlas (free M0, Mumbai) |
+| Salary slips | Private AWS S3 bucket (Mumbai) |
+
+Demo data already in the live database: Priya Sharma (`priya@example.com` / `Secret@123`) has a fully repaid **Closed** loan, and Neha Verma (`neha.verma.demo@example.com` / `Secret@123`) has an **Applied** loan waiting in the Sanction queue.
+
 ---
 
 ## Quick start
@@ -83,8 +96,9 @@ Production run: `npm --prefix backend start` and `npm --prefix frontend start`.
 
 ```
 Browser ──► Next.js (:3000) ── rewrite /api/* ──► Express API (:4000) ──► MongoDB
-              │  proxy.ts: route guard by role                │
-              │  React client pages                           └──► Storage driver (local disk | S3)
+   │          │  proxy.ts: route guard by role                │
+   │          │  React client pages                           └──► Storage driver (local disk | S3)
+   └── salary slip (S3 mode only): presigned POST straight to the S3 bucket ──────────────┘
 ```
 
 The browser only talks to the Next.js origin. Next forwards `/api/*` to Express, so the JWT can live in a first-party **httpOnly** cookie. The web app never stores or reads the token itself, no CORS round-trips are needed, and the same setup works when the frontend and backend are deployed separately.
@@ -93,9 +107,11 @@ The browser only talks to the Next.js origin. Next forwards `/api/*` to Express,
 
 ```
 backend/
+  api/index.ts              Vercel serverless entry (reuses the app and the Mongo connection)
+  Dockerfile                production image for container hosts
   src/
     app.ts                  createApp({ storage }) — wires middleware and routers
-    server.ts               connects to Mongo, picks a storage driver, starts the server
+    server.ts               long-running server: connects to Mongo, picks a storage driver, listens
     config/env.ts           Zod-validated environment
     lib/                    pure domain logic (unit-tested)
       bre.ts                eligibility rules + PAN regex
@@ -109,6 +125,7 @@ backend/
     modules/                one folder per feature: auth, borrower, sales, sanction,
                             disbursement, collection, loans (shared loan service)
     storage/                StorageDriver interface + local / S3 / in-memory drivers
+                            (S3 also issues presigned browser uploads)
     scripts/seed.ts
   tests/                    API integration tests + tests/unit
 frontend/
@@ -185,7 +202,7 @@ APPLIED ──approve (Sanction/Admin)──► SANCTIONED ──disburse (Disbu
 ### Authentication and RBAC
 
 - Passwords are hashed with bcrypt. A JWT `{ sub, role }` is set as an httpOnly, SameSite=Lax cookie (Secure in production) that expires with the token. The token is also returned in the login response for non-browser API clients, which can send `Authorization: Bearer`.
-- Login and sign-up are rate-limited to 30 attempts per 15 minutes per IP. In production the server refuses to start with a short or placeholder `JWT_SECRET`.
+- Failed logins are limited to 10 per 15 minutes for each client IP and account, and sign-ups to 50 per 15 minutes per IP. Login counts per account, not only per IP, because behind shared proxies many users can appear with the same IP. In production the server refuses to start with a short or placeholder `JWT_SECRET`.
 - `authenticate` verifies the token and **reloads the user** on every request, so the API applies deleted users or changed roles immediately. A missing or invalid token gets **401**. (The frontend route guard reads the role from the token, so its redirects catch up at the next login.)
 - `authorize(...roles)` checks the role against a single `MODULE_ROLES` map. The wrong role gets **403**.
 - **Frontend:**
@@ -198,12 +215,14 @@ APPLIED ──approve (Sanction/Admin)──► SANCTIONED ──disburse (Disbu
 
 ### File uploads
 
-- Salary slips go through multer with a 5 MB limit; larger files get **413**.
-- The declared MIME type must be PDF, PNG or JPEG, **and** the file's first bytes must match that type. A `.txt` renamed to `.pdf` is rejected.
+- The limit is 5 MB; larger files get **413**. The declared MIME type must be PDF, PNG or JPEG, **and** the file's first bytes must match that type. A `.txt` renamed to `.pdf` is rejected.
+- **Two upload paths, same checks:**
+  - **Local storage:** the browser sends a multipart upload to the API (multer, in memory).
+  - **S3 storage:** serverless hosts cap request bodies below 5 MB (Vercel accepts about 4.5 MB). So the API first checks the declared type and size, then returns a presigned S3 form that expires in 5 minutes and only accepts that key, that content type and at most 5 MB. The browser uploads straight to S3. Then the API checks the stored object's real size and first bytes before linking it, and deletes it if either check fails. The frontend picks the path automatically.
 - Files are stored under server-generated keys and never served statically. Re-uploading keeps the earlier file in storage as an audit trail. A borrower who reapplies after a rejection can reuse the slip on file. They are streamed through `GET /api/loans/:id/salary-slip` only to the owning borrower and to staff who handle loans.
 - Storage is pluggable:
   - `STORAGE_DRIVER=local` writes to `backend/uploads/` and is the default.
-  - `STORAGE_DRIVER=s3` writes to a private bucket with server-side encryption. Use it on hosts whose disks are wiped on restart.
+  - `STORAGE_DRIVER=s3` writes to a private bucket with server-side encryption. Use it on hosts whose disks are wiped on restart. The bucket needs a CORS rule allowing `POST` from the web app's origin. The IAM user needs only `s3:PutObject`, `s3:GetObject` and `s3:DeleteObject` on `salary-slips/*`, plus `s3:ListBucket` on that prefix.
 
 ---
 
@@ -220,6 +239,8 @@ Base path: `/api`. Errors always look like `{ "error": { "code", "message", "det
 | `GET /borrower/profile` | Borrower | 200 `{profile, stage}` | |
 | `PUT /borrower/profile` `{fullName,pan,dateOfBirth,monthlySalary,employmentMode}` | Borrower | 200 | 400, **422 BRE_REJECTED** with failed rules, 409 open loan |
 | `POST /borrower/salary-slip` multipart `file` | Borrower | 201 | 400 type/content, 413 size, 409 BRE not passed |
+| `POST /borrower/salary-slip/direct-upload` `{fileName,contentType,size}` | Borrower | 200 `{direct:false}` or `{direct:true,key,url,fields}` | 400 type, 413 size, 409 BRE not passed |
+| `POST /borrower/salary-slip/direct-upload/complete` `{key,fileName}` | Borrower | 201 | 400 unknown key / not uploaded / wrong content, 413 |
 | `GET /borrower/loans` | Borrower | 200 `{loans}` | |
 | `POST /borrower/loans` `{principal,tenureDays}` | Borrower | 201 `{loan}` | 400 limits, 409 BRE / slip missing / open loan |
 | `GET /loans/:id/salary-slip` | owner, Admin, Sanction, Disbursement, Collection | 200 file stream | 403, 404 |
@@ -255,10 +276,10 @@ A loan in API responses has this shape (amounts in rupees):
 npm test
 ```
 
-- **Backend (126 tests):**
+- **Backend (142 tests):**
   - Unit tests for the BRE (age boundaries, PAN formats, multiple failures), loan math, money conversion, the status machine and the storage driver.
-  - API tests against an in-memory MongoDB for every route: success paths, validation, 401/403 for every module, 409 conflicts, duplicate UTR, overpayment, concurrent payments, auto-close, rollback when the loan update fails, Indian-date boundaries, impossible dates, and a full lifecycle test using the seeded accounts.
-- **Frontend (36 tests):** loan math matches the server, client BRE, RBAC helpers including the safe `?next=` redirect, INR formatting, and a component test that moves the sliders and checks the live repayment panel.
+  - API tests against an in-memory MongoDB for every route: success paths, validation, 401/403 for every module, 409 conflicts, duplicate UTR, overpayment, concurrent payments, auto-close, rollback when the loan update fails, Indian-date boundaries, impossible dates, direct-to-storage uploads (ownership of the key, size and content checks, clean-up of rejected files), proxy-aware client IPs, and a full lifecycle test using the seeded accounts.
+- **Frontend (39 tests):** loan math matches the server, client BRE, RBAC helpers including the safe `?next=` redirect, INR formatting, the upload helper (direct vs multipart), and a component test that moves the sliders and checks the live repayment panel.
 
 The first backend run downloads a MongoDB binary for `mongodb-memory-server`. To use an installed `mongod` instead, set `MONGOMS_SYSTEM_BINARY=/path/to/mongod`.
 
@@ -275,9 +296,11 @@ The first backend run downloads a MongoDB binary for `mongodb-memory-server`. To
 | `JWT_SECRET` | none, **required** | Token signing secret (32+ random characters in production) |
 | `JWT_EXPIRES_IN` | `1d` | Token lifetime |
 | `CORS_ORIGINS` | `http://localhost:3000` | Only needed if a browser calls the API directly |
+| `TRUST_PROXY_HOPS` | `1` | Reverse proxies in front of the API, used to find the client IP for rate limiting |
 | `STORAGE_DRIVER` | `local` | `local` or `s3` |
 | `UPLOAD_DIR` | `uploads` | Folder for the local driver |
-| `AWS_REGION`, `S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | | Needed only for the S3 driver |
+| `S3_BUCKET`, `S3_REGION` | `ap-south-1` region | Needed only for the S3 driver |
+| `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | | Keys for a bucket-only IAM user. Leave both empty to use the default AWS credential chain. `S3_*` names are used because Vercel reserves `AWS_*`. |
 
 **frontend/.env.local**
 
@@ -287,11 +310,15 @@ The first backend run downloads a MongoDB binary for `mongodb-memory-server`. To
 
 ## Deploying
 
-The app runs on any Node host. A typical free setup:
+The live demo runs entirely on free tiers: Vercel for both apps, MongoDB Atlas M0 and S3. Each app is its own Vercel project.
 
-1. **MongoDB Atlas:** create a cluster and use its connection string as `MONGO_URI`.
-2. **Backend** (Render, Railway or Fly):
-   - Root directory `backend`, build `npm install && npm run build`, start `npm start`.
-   - Set `NODE_ENV=production`, `JWT_SECRET`, `MONGO_URI` and `STORAGE_DRIVER=s3` with the bucket variables.
-   - Run `npm run seed` once against the production database.
-3. **Frontend** (Vercel): root directory `frontend`, and set `BACKEND_URL` to the backend's public URL.
+**Backend** (`backend/`, Vercel project root = `backend`)
+- `backend/api/index.ts` is the serverless entry. It builds the Express app once per instance and reuses the Mongo connection across requests. `backend/vercel.json` sends every path to it.
+- Environment: `NODE_ENV=production`, `JWT_SECRET` (32+ random characters), `MONGO_URI`, `STORAGE_DRIVER=s3`, `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, and `MONGOMS_DISABLE_POSTINSTALL=1` (skips a test-only download during install).
+- Run `npm run seed` once against the production `MONGO_URI`.
+- Atlas network access must allow the host. Vercel has no fixed egress IPs on the free plan, so the demo allows `0.0.0.0/0`, protected by a long random password for a user that can only read and write the `lms` database.
+
+**Frontend** (`frontend/`, Vercel project root = `frontend`)
+- Set `BACKEND_URL` to the API's URL before building. Next.js forwards `/api/*` to it, so the auth cookie stays first-party on the web app's domain.
+
+**Other hosts:** `backend/Dockerfile` builds a small production image (`node dist/server.js`) for Render, Railway, Fly or any container host. On a long-running host, use `src/server.ts` as is. Set `TRUST_PROXY_HOPS` to the number of proxies in front of the API.
