@@ -2,6 +2,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import { docsRouter } from './docs/docs.routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { authRouter } from './modules/auth/auth.routes';
 import { collectionRouter } from './modules/collection/collection.routes';
@@ -39,6 +40,7 @@ export function createApp({ storage, corsOrigins = [], trustProxyHops = 1 }: App
     res.json({ status: 'ok' });
   });
 
+  app.use('/api', docsRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/borrower', createBorrowerRouter({ storage }));
   app.use('/api/loans', createLoansRouter({ storage }));
