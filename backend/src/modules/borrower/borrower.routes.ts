@@ -7,8 +7,8 @@ import { authorize } from '../../middleware/authorize';
 import { validateBody } from '../../middleware/validate';
 import type { StorageDriver } from '../../storage';
 import { serializeLoan } from '../../lib/serializers';
-import { profileSchema } from './borrower.schemas';
-import { getProfile, profileView, saveProfile, saveSalarySlip } from './borrower.service';
+import { completeDirectUploadSchema, directUploadSchema, profileSchema } from './borrower.schemas';
+import { completeDirectUpload, getProfile, profileView, saveProfile, saveSalarySlip, startDirectUpload } from './borrower.service';
 import { applyLoanSchema } from './loan.schemas';
 import { applyForLoan, listBorrowerLoans } from './loan.service';
 
@@ -28,6 +28,15 @@ export function createBorrowerRouter({ storage }: { storage: StorageDriver }) {
 
   router.post('/salary-slip', upload.single('file'), async (req, res) => {
     const profile = await saveSalarySlip(req.user!._id, req.file, storage);
+    res.status(201).json(profileView(profile));
+  });
+
+  router.post('/salary-slip/direct-upload', validateBody(directUploadSchema), async (req, res) => {
+    res.json(await startDirectUpload(req.user!._id, req.body, storage));
+  });
+
+  router.post('/salary-slip/direct-upload/complete', validateBody(completeDirectUploadSchema), async (req, res) => {
+    const profile = await completeDirectUpload(req.user!._id, req.body, storage);
     res.status(201).json(profileView(profile));
   });
 

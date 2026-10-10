@@ -1,5 +1,5 @@
 import { type CookieOptions, type Response, Router } from 'express';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
 import { env } from '../../config/env';
 import { AUTH_COOKIE, authenticate, signToken } from '../../middleware/authenticate';
@@ -21,24 +21,48 @@ function issueSession(res: Response, user: { _id: unknown; name: string; email: 
   return { user: toPublicUser(user), token };
 }
 
-/** Slows down password guessing and sign-up spam. Off in tests, which log in hundreds of times. */
-const credentialLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 30,
+const tooMany = { error: { code: 'TOO_MANY_REQUESTS', message: 'Too many attempts. Try again in a few minutes.' } };
+const FIFTEEN_MINUTES = 15 * 60 * 1000;
+// Off in tests, which log in hundreds of times.
+const skipInTests = () => env().NODE_ENV === 'test';
+
+/**
+ * Keyed by client IP *and* account. Behind shared proxies many users can appear with the same IP,
+ * so an IP-only key would let one person lock everyone out; per-account keys still stop password guessing.
+ */
+export function loginRateKey(req: { ip?: string; body?: { email?: unknown } }): string {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  return `${ipKeyGenerator(req.ip ?? '')}|${email}`;
+}
+
+const loginLimiter = rateLimit({
+  windowMs: FIFTEEN_MINUTES,
+  limit: 10,
+  skipSuccessfulRequests: true,
+  keyGenerator: loginRateKey,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
-  skip: () => env().NODE_ENV === 'test',
-  message: { error: { code: 'TOO_MANY_REQUESTS', message: 'Too many attempts. Try again in a few minutes.' } },
+  skip: skipInTests,
+  message: tooMany,
+});
+
+const registerLimiter = rateLimit({
+  windowMs: FIFTEEN_MINUTES,
+  limit: 50,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  skip: skipInTests,
+  message: tooMany,
 });
 
 export const authRouter = Router();
 
-authRouter.post('/register', credentialLimiter, validateBody(registerSchema), async (req, res) => {
+authRouter.post('/register', registerLimiter, validateBody(registerSchema), async (req, res) => {
   const user = await registerBorrower(req.body);
   res.status(201).json(issueSession(res, user));
 });
 
-authRouter.post('/login', credentialLimiter, validateBody(loginSchema), async (req, res) => {
+authRouter.post('/login', loginLimiter, validateBody(loginSchema), async (req, res) => {
   const user = await verifyCredentials(req.body);
   res.json(issueSession(res, user));
 });

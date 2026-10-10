@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import { z } from 'zod';
 
+const optionalString = z.string().optional().transform((v) => (v ? v : undefined));
+
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
@@ -14,8 +16,12 @@ const schema = z.object({
   JWT_EXPIRES_IN: z.string().default('1d'),
   STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
   UPLOAD_DIR: z.string().default('uploads'),
+  S3_BUCKET: optionalString,
+  /** S3_* take precedence; the AWS_* names also work where the host doesn't reserve them (Vercel does). */
+  S3_REGION: optionalString,
+  S3_ACCESS_KEY_ID: optionalString,
+  S3_SECRET_ACCESS_KEY: optionalString,
   AWS_REGION: z.string().default('ap-south-1'),
-  S3_BUCKET: z.string().optional(),
 });
 
 const productionSafe = schema.refine(

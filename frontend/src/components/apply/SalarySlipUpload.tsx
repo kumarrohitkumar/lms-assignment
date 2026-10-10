@@ -1,9 +1,10 @@
 'use client';
 
 import { type ChangeEvent, type DragEvent, type FormEvent, useRef, useState } from 'react';
-import { api, errorMessage } from '@/lib/api';
+import { errorMessage } from '@/lib/api';
 import { formatBytes, formatDate } from '@/lib/format';
 import type { ProfileResponse, SalarySlip } from '@/lib/types';
+import { uploadSalarySlip } from '@/lib/upload';
 import { Alert, Button, cx } from '../ui';
 
 const ACCEPTED = ['application/pdf', 'image/jpeg', 'image/png'];
@@ -42,9 +43,7 @@ export function SalarySlipUpload({ existing, onUploaded, onContinue, onBack }: P
     setUploading(true);
     setError(null);
     try {
-      const body = new FormData();
-      body.append('file', file);
-      onUploaded(await api<ProfileResponse>('/borrower/salary-slip', { body }));
+      onUploaded(await uploadSalarySlip(file));
     } catch (err) {
       setError(errorMessage(err));
     } finally {

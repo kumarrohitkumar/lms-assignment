@@ -26,3 +26,19 @@ export const profileSchema = z.object({
 });
 
 export type ProfileInput = z.infer<typeof profileSchema>;
+
+const fileName = z.string().trim().min(1, 'File name is required').max(255);
+
+export const directUploadSchema = z.object({
+  fileName,
+  contentType: z.string().trim().min(1).max(100),
+  size: z.number().int().positive('File is empty'),
+});
+
+export const completeDirectUploadSchema = z.object({
+  key: z.string().min(1).max(200),
+  fileName,
+});
+
+export type DirectUploadInput = z.infer<typeof directUploadSchema>;
+export type CompleteDirectUploadInput = z.infer<typeof completeDirectUploadSchema>;

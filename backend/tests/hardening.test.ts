@@ -4,6 +4,7 @@ import { createApp } from '../src/app';
 import { evaluateBre } from '../src/lib/bre';
 import { createMemoryStorage } from '../src/storage/memoryStorage';
 import { Loan } from '../src/models/Loan';
+import { loginRateKey } from '../src/modules/auth/auth.routes';
 import { Payment } from '../src/models/Payment';
 import { createAppliedLoan, validProfile } from './fixtures';
 import { buildTestApp, createUser, loginAs, TEST_PASSWORD } from './helpers';
@@ -98,5 +99,18 @@ describe('client IP behind proxies', () => {
   it('defaults to one hop', () => {
     const trust = createApp({ storage: createMemoryStorage() }).get('trust proxy fn');
     expect([0, 1].map((hop) => trust('10.0.0.1', hop))).toEqual([true, false]);
+  });
+});
+
+describe('login rate-limit key', () => {
+  it('is per client IP and account, so one person cannot lock out everyone behind the same proxy', () => {
+    const a = loginRateKey({ ip: '76.76.21.21', body: { email: ' Admin@LMS.dev ' } });
+    const b = loginRateKey({ ip: '76.76.21.21', body: { email: 'sales@lms.dev' } });
+    expect(a).toBe('76.76.21.21|admin@lms.dev');
+    expect(a).not.toBe(b);
+  });
+
+  it('copes with a missing body', () => {
+    expect(loginRateKey({ ip: '10.0.0.1', body: undefined })).toBe('10.0.0.1|');
   });
 });
