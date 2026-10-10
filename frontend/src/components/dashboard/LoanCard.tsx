@@ -28,12 +28,13 @@ export function LoanCard({
             <StatusBadge status={loan.status} />
             {total > 0 && (
               <span
+                title="Automatic eligibility checks run when the borrower applied. The team still reviews the documents before deciding."
                 className={cx(
                   'inline-flex rounded-full px-2 py-0.5 text-xs font-medium',
                   passed === total ? 'bg-ledger-wash text-ledger-ink' : 'bg-rust-wash text-rust',
                 )}
               >
-                {passed}/{total} checks passed
+                {passed}/{total} auto checks passed
               </span>
             )}
           </div>
