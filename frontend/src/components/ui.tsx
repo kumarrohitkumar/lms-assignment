@@ -2,8 +2,9 @@
 
 import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, useEffect, useId, useRef } from 'react';
 import type { LoanStatus } from '@/lib/types';
+import { cx } from '@/lib/cx';
+import { BrandLoader } from './BrandLoader';
 
-const cx = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' ');
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 const variants: Record<Variant, string> = {
@@ -132,8 +133,8 @@ export function EmptyState({ title, children }: { title: string; children?: Reac
 
 export function LoadingBlock({ label = 'Loading' }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center gap-3 py-16 text-ink-soft" role="status">
-      <Spinner /> {label}…
+    <div className="anim-fade flex justify-center py-16">
+      <BrandLoader label={label} size="sm" />
     </div>
   );
 }
