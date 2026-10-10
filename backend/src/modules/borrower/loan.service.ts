@@ -1,4 +1,6 @@
 import type { Types } from 'mongoose';
+import type { EmploymentMode } from '../../lib/bre';
+import { eligibilitySnapshot } from '../../lib/eligibility';
 import { conflict } from '../../lib/errors';
 import { calculateLoan, INTEREST_RATE_PA } from '../../lib/loanMath';
 import { LoanStatus, OPEN_LOAN_STATUSES } from '../../lib/loanStatus';
@@ -36,6 +38,13 @@ export async function applyForLoan(borrowerId: Types.ObjectId, input: ApplyLoanI
         employmentMode: profile.employmentMode,
       },
       salarySlip: profile.salarySlip,
+      eligibility: eligibilitySnapshot({
+        pan: profile.pan,
+        dateOfBirth: profile.dateOfBirth,
+        monthlySalary: profile.monthlySalary,
+        employmentMode: profile.employmentMode as EmploymentMode,
+        slipName: profile.salarySlip.originalName,
+      }),
       principal,
       tenureDays: input.tenureDays,
       interestRatePa: INTEREST_RATE_PA,

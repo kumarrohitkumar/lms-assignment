@@ -26,12 +26,41 @@ const applicantSchema = new Schema(
   { _id: false },
 );
 
+const eligibilityCheckSchema = new Schema(
+  { rule: { type: String, required: true }, label: String, passed: { type: Boolean, required: true }, detail: String },
+  { _id: false },
+);
+
+/** Why and by whom a loan was turned down (sanction or disbursement stage). */
+const rejectionSchema = new Schema(
+  {
+    stage: { type: String, enum: ['SANCTION', 'DISBURSEMENT'], required: true },
+    category: { type: String, required: true },
+    note: { type: String, default: null },
+    by: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    at: { type: Date, required: true },
+  },
+  { _id: false },
+);
+
+const disbursementSchema = new Schema(
+  {
+    reference: { type: String, required: true },
+    remark: { type: String, default: null },
+    by: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    at: { type: Date, required: true },
+  },
+  { _id: false },
+);
+
 /** All money fields are integer paise. Outstanding = totalRepayment − amountPaid (derived, not stored). */
 const loanSchema = new Schema(
   {
     borrower: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     applicant: { type: applicantSchema, required: true },
     salarySlip: { type: salarySlipSchema, required: true },
+    /** What the system checked at application time, with the values it saw. */
+    eligibility: { type: [eligibilityCheckSchema], default: [] },
     principal: { type: Number, required: true, min: 0 },
     tenureDays: { type: Number, required: true, min: 1 },
     interestRatePa: { type: Number, required: true },
@@ -40,6 +69,8 @@ const loanSchema = new Schema(
     amountPaid: { type: Number, required: true, default: 0, min: 0 },
     status: { type: String, enum: LOAN_STATUSES, required: true, default: LoanStatus.APPLIED, index: true },
     rejectionReason: { type: String, default: null },
+    rejection: { type: rejectionSchema, default: null },
+    disbursement: { type: disbursementSchema, default: null },
     statusHistory: { type: [statusChangeSchema], default: [] },
     sanctionedAt: { type: Date, default: null },
     disbursedAt: { type: Date, default: null },

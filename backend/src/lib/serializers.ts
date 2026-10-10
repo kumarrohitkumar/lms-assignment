@@ -1,3 +1,4 @@
+import { categoryLabel, type DecisionStage } from './decisions';
 import { toRupees } from './money';
 
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
@@ -49,6 +50,9 @@ export function serializeLoan(loan: {
   amountPaid: number;
   status: string;
   rejectionReason?: string | null;
+  eligibility?: { rule: string; label?: string | null; passed: boolean; detail?: string | null }[];
+  rejection?: { stage: string; category: string; note?: string | null; by: unknown; at: Date } | null;
+  disbursement?: { reference: string; remark?: string | null; by: unknown; at: Date } | null;
   statusHistory: { from?: string | null; to: string; by?: unknown; at: Date; note?: string | null }[];
   sanctionedAt?: Date | null;
   disbursedAt?: Date | null;
@@ -81,6 +85,20 @@ export function serializeLoan(loan: {
     outstanding: toRupees(loan.totalRepayment - loan.amountPaid),
     status: loan.status,
     rejectionReason: loan.rejectionReason ?? null,
+    eligibility: (loan.eligibility ?? []).map((c) => ({ rule: c.rule, label: c.label ?? c.rule, passed: c.passed, detail: c.detail ?? '' })),
+    rejection: loan.rejection
+      ? {
+          stage: loan.rejection.stage,
+          category: loan.rejection.category,
+          categoryLabel: categoryLabel(loan.rejection.stage as DecisionStage, loan.rejection.category),
+          note: loan.rejection.note ?? null,
+          by: String(loan.rejection.by),
+          at: loan.rejection.at,
+        }
+      : null,
+    disbursement: loan.disbursement
+      ? { reference: loan.disbursement.reference, remark: loan.disbursement.remark ?? null, by: String(loan.disbursement.by), at: loan.disbursement.at }
+      : null,
     statusHistory: loan.statusHistory.map((h) => ({
       from: h.from ?? null,
       to: h.to,

@@ -21,6 +21,8 @@ const TRANSITIONS: { from: LoanStatus; to: LoanStatus; actors: Actor[] }[] = [
   { from: LoanStatus.APPLIED, to: LoanStatus.SANCTIONED, actors: [Role.SANCTION, Role.ADMIN] },
   { from: LoanStatus.APPLIED, to: LoanStatus.REJECTED, actors: [Role.SANCTION, Role.ADMIN] },
   { from: LoanStatus.SANCTIONED, to: LoanStatus.DISBURSED, actors: [Role.DISBURSEMENT, Role.ADMIN] },
+  // Disbursement can still stop a sanctioned loan (bank details, KYC, borrower withdrew).
+  { from: LoanStatus.SANCTIONED, to: LoanStatus.REJECTED, actors: [Role.DISBURSEMENT, Role.ADMIN] },
   { from: LoanStatus.DISBURSED, to: LoanStatus.CLOSED, actors: ['SYSTEM'] },
 ];
 

@@ -25,7 +25,7 @@ describe('disbursement module', () => {
   it('disburses: SANCTIONED → DISBURSED', async () => {
     const loanId = await sanctionedLoan();
     const { cookie } = await loginAs(app, 'DISBURSEMENT');
-    const res = await request(app).post(`/api/disbursement/loans/${loanId}/disburse`).set('Cookie', cookie);
+    const res = await request(app).post(`/api/disbursement/loans/${loanId}/disburse`).set('Cookie', cookie).send({ reference: 'NEFT00000001' });
     expect(res.status).toBe(200);
     expect(res.body.loan).toMatchObject({ status: 'DISBURSED', disbursedAt: expect.any(String), outstanding: 112000 });
   });
@@ -33,7 +33,7 @@ describe('disbursement module', () => {
   it('cannot disburse a loan that has not been sanctioned', async () => {
     const { loanId } = await createAppliedLoan(app, loginAs);
     const { cookie } = await loginAs(app, 'DISBURSEMENT');
-    const res = await request(app).post(`/api/disbursement/loans/${loanId}/disburse`).set('Cookie', cookie);
+    const res = await request(app).post(`/api/disbursement/loans/${loanId}/disburse`).set('Cookie', cookie).send({ reference: 'NEFT00000001' });
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('INVALID_TRANSITION');
   });
@@ -42,7 +42,7 @@ describe('disbursement module', () => {
     const loanId = await sanctionedLoan();
     for (const role of ['SALES', 'SANCTION', 'COLLECTION', 'BORROWER'] as const) {
       const { cookie } = await loginAs(app, role);
-      expect((await request(app).post(`/api/disbursement/loans/${loanId}/disburse`).set('Cookie', cookie)).status).toBe(403);
+      expect((await request(app).post(`/api/disbursement/loans/${loanId}/disburse`).set('Cookie', cookie).send({ reference: 'NEFT00000001' })).status).toBe(403);
     }
   });
 });

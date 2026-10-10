@@ -12,7 +12,7 @@ async function disbursedLoan() {
   const { loanId, borrower } = await createAppliedLoan(app, loginAs, { principal: 100000, tenureDays: 365 });
   const admin = await loginAs(app, 'ADMIN');
   await request(app).post(`/api/sanction/loans/${loanId}/approve`).set('Cookie', admin.cookie).expect(200);
-  await request(app).post(`/api/disbursement/loans/${loanId}/disburse`).set('Cookie', admin.cookie).expect(200);
+  await request(app).post(`/api/disbursement/loans/${loanId}/disburse`).set('Cookie', admin.cookie).send({ reference: 'NEFT00000001' }).expect(200);
   const collection = await loginAs(app, 'COLLECTION');
   return { loanId, borrower, cookie: collection.cookie };
 }

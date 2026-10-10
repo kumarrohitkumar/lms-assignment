@@ -41,7 +41,7 @@ describe('impossible calendar dates are rejected, not rolled over', () => {
     const { loanId } = await createAppliedLoan(app, loginAs);
     const admin = await loginAs(app, 'ADMIN');
     await request(app).post(`/api/sanction/loans/${loanId}/approve`).set('Cookie', admin.cookie).expect(200);
-    await request(app).post(`/api/disbursement/loans/${loanId}/disburse`).set('Cookie', admin.cookie).expect(200);
+    await request(app).post(`/api/disbursement/loans/${loanId}/disburse`).set('Cookie', admin.cookie).send({ reference: 'NEFT00000001' }).expect(200);
     const res = await request(app)
       .post(`/api/collection/loans/${loanId}/payments`)
       .set('Cookie', admin.cookie)
@@ -56,7 +56,7 @@ describe('payment recording failure', () => {
     const { loanId } = await createAppliedLoan(app, loginAs);
     const admin = await loginAs(app, 'ADMIN');
     await request(app).post(`/api/sanction/loans/${loanId}/approve`).set('Cookie', admin.cookie).expect(200);
-    await request(app).post(`/api/disbursement/loans/${loanId}/disburse`).set('Cookie', admin.cookie).expect(200);
+    await request(app).post(`/api/disbursement/loans/${loanId}/disburse`).set('Cookie', admin.cookie).send({ reference: 'NEFT00000001' }).expect(200);
 
     vi.spyOn(Loan, 'findOneAndUpdate').mockImplementationOnce(() => {
       throw new Error('connection reset');

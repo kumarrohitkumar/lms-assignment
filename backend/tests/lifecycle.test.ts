@@ -48,7 +48,7 @@ describe('end-to-end loan lifecycle with seeded staff', () => {
 
     // Sanction → disbursement
     await request(app).post(`/api/sanction/loans/${loanId}/approve`).set('Cookie', await login('sanction@lms.dev')).expect(200);
-    await request(app).post(`/api/disbursement/loans/${loanId}/disburse`).set('Cookie', await login('disbursement@lms.dev')).expect(200);
+    await request(app).post(`/api/disbursement/loans/${loanId}/disburse`).set('Cookie', await login('disbursement@lms.dev')).send({ reference: 'NEFT00000001' }).expect(200);
 
     // Collection: two payments settle the loan
     const collection = await login('collection@lms.dev');
