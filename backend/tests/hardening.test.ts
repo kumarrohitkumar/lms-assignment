@@ -1,6 +1,8 @@
 import request from 'supertest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createApp } from '../src/app';
 import { evaluateBre } from '../src/lib/bre';
+import { createMemoryStorage } from '../src/storage/memoryStorage';
 import { Loan } from '../src/models/Loan';
 import { Payment } from '../src/models/Payment';
 import { createAppliedLoan, validProfile } from './fixtures';
@@ -84,5 +86,17 @@ describe('auth cookie', () => {
     const cookie = res.headers['set-cookie']![0]!;
     const { exp } = JSON.parse(Buffer.from(res.body.token.split('.')[1], 'base64url').toString());
     expect(cookie).toContain(`Expires=${new Date(exp * 1000).toUTCString()}`);
+  });
+});
+
+describe('client IP behind proxies', () => {
+  it('trusts exactly the configured number of proxy hops (Vercel + Railway = 2)', () => {
+    const trust = createApp({ storage: createMemoryStorage(), trustProxyHops: 2 }).get('trust proxy fn');
+    expect([0, 1, 2].map((hop) => trust('10.0.0.1', hop))).toEqual([true, true, false]);
+  });
+
+  it('defaults to one hop', () => {
+    const trust = createApp({ storage: createMemoryStorage() }).get('trust proxy fn');
+    expect([0, 1].map((hop) => trust('10.0.0.1', hop))).toEqual([true, false]);
   });
 });

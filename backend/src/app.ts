@@ -15,12 +15,14 @@ import type { StorageDriver } from './storage/StorageDriver';
 export interface AppDeps {
   storage: StorageDriver;
   corsOrigins?: string[];
+  /** Reverse proxies in front of the API (Railway edge = 1; Vercel rewrite + Railway edge = 2). Used for req.ip. */
+  trustProxyHops?: number;
 }
 
-export function createApp({ storage, corsOrigins = [] }: AppDeps) {
+export function createApp({ storage, corsOrigins = [], trustProxyHops = 1 }: AppDeps) {
   const app = express();
   app.disable('x-powered-by');
-  app.set('trust proxy', 1);
+  app.set('trust proxy', trustProxyHops);
   app.use(helmet());
   app.use(cors({ origin: corsOrigins, credentials: true }));
   app.use(express.json({ limit: '100kb' }));

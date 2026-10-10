@@ -8,7 +8,11 @@ async function main() {
   await mongoose.connect(config.MONGO_URI);
   await Promise.all(Object.values(mongoose.models).map((model) => model.syncIndexes()));
 
-  const app = createApp({ storage: createStorage(config), corsOrigins: config.CORS_ORIGINS });
+  const app = createApp({
+    storage: createStorage(config),
+    corsOrigins: config.CORS_ORIGINS,
+    trustProxyHops: config.TRUST_PROXY_HOPS,
+  });
   const server = app.listen(config.PORT, () => {
     console.log(`LMS API listening on http://localhost:${config.PORT} (storage: ${config.STORAGE_DRIVER})`);
   });

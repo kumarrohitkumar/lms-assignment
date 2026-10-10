@@ -8,6 +8,7 @@ const schema = z.object({
     .string()
     .default('http://localhost:3000')
     .transform((v) => v.split(',').map((s) => s.trim()).filter(Boolean)),
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
   MONGO_URI: z.string().default('mongodb://localhost:27017/lms'),
   JWT_SECRET: z.string().min(8, 'JWT_SECRET must be at least 8 characters'),
   JWT_EXPIRES_IN: z.string().default('1d'),
