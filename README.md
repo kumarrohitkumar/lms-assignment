@@ -25,7 +25,10 @@ Everything the assignment asks for is implemented as specified. These additions 
 | **Payment reversal** | Collection can reverse a bounced or mistaken payment with a reason. The payment stays in the record as reversed (its UTR stays used), the balance goes back up, and a loan that payment had closed is reopened. Collection also has a Closed tab. |
 | **History** | Every loan has a timeline: status changes, payments and reversals, each with who did it (or "Automatic") and why. It is shown in a details drawer in every module and on the borrower's loan. |
 | **Admin Overview and History** | Admin gets a portfolio overview (loans by stage, disbursed, collected, outstanding) and a searchable, filterable list of every loan. These span every stage, so they are admin-only; executives still see only their own module. |
+| **Due dates and overdue** | Each disbursed loan is due its tenure after the disbursal date. Collection lists overdue loans first; cards and the borrower view show "Due in N days" or "Overdue by N days"; the overview totals what is overdue. |
 | **Working faster** | Search by name, email or PAN in every queue. Refresh shows progress and the time of the last update. |
+| **API docs** | Interactive Swagger UI at [`/api/docs`](https://kosh-lms.vercel.app/api/docs) over an OpenAPI 3.1 document ([`/api/openapi.json`](https://kosh-lms.vercel.app/api/openapi.json)); a test keeps it in step with the routes. |
+| **Dark mode** | System, Light or Dark from the header. The choice is remembered and applied before the page paints. |
 | **Motion** | Lists rise in, dialogs pop, drawers slide, numbers count up, and changes flash once. All of it is turned off for people who set "reduce motion". |
 
 ## Live demo
@@ -271,7 +274,8 @@ Base path: `/api`. Errors always look like `{ "error": { "code", "message", "det
 | `POST /collection/payments/:id/reverse` `{reason}` | Collection, Admin | 200 `{loan, payment}` | 400, 404, 409 already reversed |
 | `GET /loans/:id` | owner, Admin, Sanction, Disbursement, Collection | 200 `{loan, timeline, payments}` | 403, 404 |
 | `GET /loans?status&q&page&pageSize` | Admin | 200 `{loans, total, page, pageSize}` | 403 |
-| `GET /admin/overview` | Admin | 200 counts and money totals | 403 |
+| `GET /admin/overview` | Admin | 200 counts, money totals and overdue | 403 |
+| `GET /openapi.json`, `GET /docs` | public | OpenAPI document and Swagger UI | |
 | `GET /decisions/rejection-categories` | staff | 200 categories per stage | 403 |
 
 A loan in API responses has this shape (amounts in rupees):
@@ -296,10 +300,10 @@ A loan in API responses has this shape (amounts in rupees):
 npm test
 ```
 
-- **Backend (166 tests):**
+- **Backend (177 tests):**
   - Unit tests for the BRE (age boundaries, PAN formats, multiple failures), loan math, money conversion, the status machine and the storage driver.
   - API tests against an in-memory MongoDB for every route: success paths, validation, 401/403 for every module, 409 conflicts, duplicate UTR, overpayment, concurrent payments, auto-close, rollback when the loan update fails, Indian-date boundaries, impossible dates, direct-to-storage uploads (ownership of the key, size and content checks, clean-up of rejected files), proxy-aware client IPs, and a full lifecycle test using the seeded accounts.
-- **Frontend (49 tests):** loan math matches the server, client BRE, RBAC helpers including the safe `?next=` redirect, INR formatting, the upload helper (direct vs multipart), and a component test that moves the sliders and checks the live repayment panel.
+- **Frontend (61 tests):** loan math matches the server, client BRE, RBAC helpers including the safe `?next=` redirect, INR formatting, the upload helper (direct vs multipart), and a component test that moves the sliders and checks the live repayment panel.
 
 The first backend run downloads a MongoDB binary for `mongodb-memory-server`. To use an installed `mongod` instead, set `MONGOMS_SYSTEM_BINARY=/path/to/mongod`.
 
