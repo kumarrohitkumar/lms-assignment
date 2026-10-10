@@ -47,9 +47,9 @@ export function LoanHeroArt() {
       {/* Front card: the application itself */}
       <div className="hero-front absolute bottom-0 left-0 w-[70%] rounded-2xl bg-white p-5 text-[#1b2430] shadow-2xl">
         <div className="flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-full bg-[#0f6b4f] text-sm font-bold text-white">PS</span>
+          <span className="grid size-10 place-items-center rounded-full bg-[#0f6b4f] text-sm font-bold text-white">RK</span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold">Priya Sharma</p>
+            <p className="truncate text-sm font-semibold">Rohit Kumar</p>
             <p className="text-xs text-[#4a5563]">Personal loan</p>
           </div>
           <span className="relative h-6 w-[92px]">
