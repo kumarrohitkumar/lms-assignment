@@ -6,6 +6,10 @@ A lending platform where borrowers apply for personal loans and internal teams t
 - **Borrower portal**: sign up, personal details with a server-side eligibility check (BRE), salary-slip upload, and a loan configurator with a live simple-interest calculation.
 - **Operations dashboard**: four modules (Sales, Sanction, Disbursement, Collection). Each executive sees only their own module and Admin sees all four. Access is enforced in the UI and by the API.
 
+**Demo video:** [watch on YouTube](https://www.youtube.com/watch?v=D0_4UIqaj7g). One loan end to end: a borrower applies (BRE fail and pass), it is sanctioned, disbursed, repaid, and closes.
+
+[![Kosh demo video](https://img.youtube.com/vi/D0_4UIqaj7g/hqdefault.jpg)](https://www.youtube.com/watch?v=D0_4UIqaj7g)
+
 | Layer    | Stack |
 |----------|-------|
 | Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4 |
@@ -35,6 +39,8 @@ Everything the assignment asks for is implemented as specified. These additions 
 ## Live demo
 
 **https://kosh-lms.vercel.app** — log in with any account from [Login credentials](#login-credentials) below.
+
+Demo video: https://www.youtube.com/watch?v=D0_4UIqaj7g
 
 | Part | Where it runs |
 |---|---|
