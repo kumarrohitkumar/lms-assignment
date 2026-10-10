@@ -10,16 +10,11 @@ export const metadata: Metadata = {
   description: 'Apply for a personal loan and manage loans from application to closure.',
 };
 
-export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#0f6b4f' },
-    { media: '(prefers-color-scheme: dark)', color: '#0e1318' },
-  ],
-};
+export const viewport: Viewport = { themeColor: '#0e1318' };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="en" className={`${publicSans.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="en" data-theme="dark" className={`${publicSans.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         {/* Applies a saved theme before first paint. */}
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />

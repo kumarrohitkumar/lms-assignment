@@ -1,7 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { applyTheme, nextTheme, readTheme, subscribeTheme, type ThemePref } from '@/lib/theme';
+import { applyTheme, DEFAULT_THEME, nextTheme, readTheme, subscribeTheme, type ThemePref } from '@/lib/theme';
 import { cx } from './ui';
 
 const LABEL: Record<ThemePref, string> = { system: 'System', light: 'Light', dark: 'Dark' };
@@ -31,9 +31,9 @@ function Icon({ pref }: { pref: ThemePref }) {
   );
 }
 
-/** Cycles System → Light → Dark. Follows the operating system until the person picks. */
+/** Cycles Dark → Light → System. Dark is the default until the person picks. */
 export function ThemeToggle({ className }: { className?: string }) {
-  const pref = useSyncExternalStore(subscribeTheme, readTheme, () => 'system' as ThemePref);
+  const pref = useSyncExternalStore(subscribeTheme, readTheme, () => DEFAULT_THEME);
   return (
     <button
       type="button"

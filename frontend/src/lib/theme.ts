@@ -1,14 +1,18 @@
 export type ThemePref = 'system' | 'light' | 'dark';
 export const THEME_KEY = 'kosh-theme';
+/** What a first-time visitor sees. The server renders <html data-theme="dark"> to match. */
+export const DEFAULT_THEME: ThemePref = 'dark';
 const CHANGE_EVENT = 'kosh-theme-change';
 
-/** The saved choice; anything unreadable means "follow the system". */
+const isPref = (v: unknown): v is ThemePref => v === 'system' || v === 'light' || v === 'dark';
+
+/** The saved choice, or the default when nothing (or something unreadable) is saved. */
 export function readTheme(): ThemePref {
   try {
     const v = typeof window !== 'undefined' ? window.localStorage.getItem(THEME_KEY) : null;
-    return v === 'light' || v === 'dark' ? v : 'system';
+    return isPref(v) ? v : DEFAULT_THEME;
   } catch {
-    return 'system';
+    return DEFAULT_THEME;
   }
 }
 
@@ -18,15 +22,14 @@ export function applyTheme(pref: ThemePref) {
   if (pref === 'system') root.removeAttribute('data-theme');
   else root.dataset.theme = pref;
   try {
-    if (pref === 'system') localStorage.removeItem(THEME_KEY);
-    else localStorage.setItem(THEME_KEY, pref);
+    localStorage.setItem(THEME_KEY, pref);
   } catch {
     // Storage blocked (private mode): the choice still applies for this page.
   }
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
-export const nextTheme = (pref: ThemePref): ThemePref => (pref === 'system' ? 'light' : pref === 'light' ? 'dark' : 'system');
+export const nextTheme = (pref: ThemePref): ThemePref => (pref === 'dark' ? 'light' : pref === 'light' ? 'system' : 'dark');
 
 export function subscribeTheme(onChange: () => void) {
   window.addEventListener(CHANGE_EVENT, onChange);
@@ -37,5 +40,8 @@ export function subscribeTheme(onChange: () => void) {
   };
 }
 
-/** Runs before first paint (inlined in <head>) so a saved dark choice never flashes light. */
-export const themeBootScript = `try{var t=localStorage.getItem('${THEME_KEY}');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}`;
+/**
+ * Inlined in <head> and run before first paint. The HTML arrives dark; this switches to a saved
+ * Light, or hands over to the operating system for a saved System, so there is never a flash.
+ */
+export const themeBootScript = `try{var t=localStorage.getItem('${THEME_KEY}'),r=document.documentElement;if(t==='light')r.dataset.theme='light';else if(t==='system')r.removeAttribute('data-theme')}catch(e){}`;
