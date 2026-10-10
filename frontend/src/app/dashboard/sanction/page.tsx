@@ -3,111 +3,128 @@
 import { type FormEvent, useState } from 'react';
 import { LoanCard } from '@/components/dashboard/LoanCard';
 import { ModulePage } from '@/components/dashboard/ModulePage';
+import { QueueSearch } from '@/components/dashboard/QueueSearch';
 import { RefreshButton } from '@/components/dashboard/RefreshButton';
 import { useQueue } from '@/components/dashboard/useQueue';
-import { Alert, Button, EmptyState, Field, LoadingBlock, Modal } from '@/components/ui';
+import { EligibilityChecklist } from '@/components/loan/EligibilityChecklist';
+import { LoanDetailsDrawer } from '@/components/loan/LoanDetails';
+import { RejectDialog } from '@/components/loan/RejectDialog';
+import { Alert, Button, EmptyState, Modal, SkeletonCards } from '@/components/ui';
 import { api, errorMessage } from '@/lib/api';
 import { formatINR } from '@/lib/format';
 import type { Loan } from '@/lib/types';
 
 export default function SanctionPage() {
-  const { items: loans, error, reload, refreshing, updatedAt, remove } = useQueue<Loan>('/sanction/loans', 'loans');
-  const [busy, setBusy] = useState<string | null>(null);
+  const [q, setQ] = useState('');
+  const { items: loans, error, reload, refreshing, updatedAt, remove } = useQueue<Loan>('/sanction/loans', 'loans', { q });
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [approving, setApproving] = useState<Loan | null>(null);
   const [rejecting, setRejecting] = useState<Loan | null>(null);
-  const [reason, setReason] = useState('');
-  const [reasonError, setReasonError] = useState<string | null>(null);
+  const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [remark, setRemark] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  async function approve(loan: Loan) {
-    setBusy(loan.id);
-    setNotice(null);
+  async function approve(e: FormEvent) {
+    e.preventDefault();
+    if (!approving) return;
+    setSaving(true);
     try {
-      await api(`/sanction/loans/${loan.id}/approve`, { method: 'POST' });
-      remove(loan.id);
-      setNotice({ tone: 'success', text: `Sanctioned ${formatINR(loan.principal)} for ${loan.applicant.fullName}. It is now with Disbursement.` });
+      await api(`/sanction/loans/${approving.id}/approve`, { body: remark.trim() ? { remark: remark.trim() } : {} });
+      remove(approving.id);
+      setNotice({ tone: 'success', text: `Sanctioned ${formatINR(approving.principal)} for ${approving.applicant.fullName}. It is now with Disbursement.` });
+      setApproving(null);
+      setRemark('');
     } catch (err) {
       setNotice({ tone: 'error', text: errorMessage(err) });
+      setApproving(null);
       reload();
     } finally {
-      setBusy(null);
+      setSaving(false);
     }
   }
 
-  async function reject(e: FormEvent) {
-    e.preventDefault();
+  async function reject(input: { category: string; note?: string }) {
     if (!rejecting) return;
-    if (reason.trim().length < 3) return setReasonError('Give the borrower a reason (at least 3 characters).');
-    setBusy(rejecting.id);
-    try {
-      await api(`/sanction/loans/${rejecting.id}/reject`, { body: { reason } });
-      remove(rejecting.id);
-      setNotice({ tone: 'success', text: `Rejected the application from ${rejecting.applicant.fullName}.` });
-      closeReject();
-    } catch (err) {
-      setReasonError(errorMessage(err));
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  function closeReject() {
-    setRejecting(null);
-    setReason('');
-    setReasonError(null);
+    await api(`/sanction/loans/${rejecting.id}/reject`, { body: input });
+    remove(rejecting.id);
+    setNotice({ tone: 'success', text: `Rejected the application from ${rejecting.applicant.fullName}. They can see the reason.` });
   }
 
   return (
     <ModulePage
       module="sanction"
-      actions={<RefreshButton onRefresh={() => {
-          setNotice(null);
-          reload();
-        }} refreshing={refreshing} updatedAt={updatedAt} />}
+      actions={
+        <RefreshButton
+          onRefresh={() => {
+            setNotice(null);
+            reload();
+          }}
+          refreshing={refreshing}
+          updatedAt={updatedAt}
+        />
+      }
+      search={<QueueSearch onSearch={setQ} />}
     >
-      {notice && <Alert tone={notice.tone}>{notice.text}</Alert>}
+      {notice && (
+        <div className="anim-rise">
+          <Alert tone={notice.tone}>{notice.text}</Alert>
+        </div>
+      )}
       {error && <Alert>{error}</Alert>}
-      {!loans && !error && <LoadingBlock label="Loading applications" />}
-      {loans?.length === 0 && <EmptyState title="No applications waiting">New applications will appear here as borrowers apply.</EmptyState>}
-      {loans?.map((loan) => (
-        <LoanCard key={loan.id} loan={loan}>
-          <Button onClick={() => approve(loan)} loading={busy === loan.id && !rejecting} disabled={!!busy}>
-            Approve
-          </Button>
-          <Button variant="danger" onClick={() => setRejecting(loan)} disabled={!!busy}>
+      {!loans && !error && <SkeletonCards />}
+      {loans?.length === 0 && (
+        <EmptyState title={q ? 'No applications match your search' : 'No applications waiting'}>
+          {q ? 'Try a different name, email or PAN.' : 'New applications will appear here as borrowers apply.'}
+        </EmptyState>
+      )}
+      {loans?.map((loan, i) => (
+        <LoanCard key={loan.id} loan={loan} index={i} onDetails={() => setDetailsId(loan.id)}>
+          <Button onClick={() => setApproving(loan)}>Approve</Button>
+          <Button variant="danger" onClick={() => setRejecting(loan)}>
             Reject
           </Button>
         </LoanCard>
       ))}
 
-      <Modal open={!!rejecting} onClose={closeReject} title="Reject this application?">
-        <form onSubmit={reject} className="flex flex-col gap-4">
-          <p className="text-sm text-ink-soft">
-            {rejecting?.applicant.fullName} will see this reason on their application.
-          </p>
-          <Field label="Reason" error={reasonError ?? undefined}>
-            {(id, d) => (
+      <Modal open={!!approving} onClose={() => setApproving(null)} title="Approve this application?">
+        {approving && (
+          <form onSubmit={approve} className="flex flex-col gap-4">
+            <p className="text-sm text-ink-soft">
+              Sanction <span className="tabular font-semibold text-ink">{formatINR(approving.principal)}</span> for {approving.applicant.fullName}. These
+              checks passed when they applied:
+            </p>
+            <EligibilityChecklist checks={approving.eligibility} />
+            <label className="flex flex-col gap-1.5 text-sm font-medium">
+              Remark (optional, kept in the history)
               <textarea
-                id={id}
-                aria-describedby={d}
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                rows={3}
+                value={remark}
+                onChange={(e) => setRemark(e.target.value)}
+                rows={2}
                 maxLength={500}
-                className="w-full rounded-md border border-line-strong bg-surface px-3 py-2 focus:border-ledger focus:outline-none focus:ring-2 focus:ring-ledger/20"
-                placeholder="For example: salary on the slip does not match the declared salary"
+                placeholder="For example: salary verified against the slip"
+                className="w-full rounded-md border border-line-strong bg-surface px-3 py-2 font-normal focus:border-ledger focus:outline-none focus:ring-2 focus:ring-ledger/20"
               />
-            )}
-          </Field>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={closeReject}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="danger" loading={!!busy}>
-              Reject application
-            </Button>
-          </div>
-        </form>
+            </label>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setApproving(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={saving}>
+                Approve
+              </Button>
+            </div>
+          </form>
+        )}
       </Modal>
+
+      <RejectDialog
+        open={!!rejecting}
+        stage="SANCTION"
+        applicant={rejecting?.applicant.fullName ?? ''}
+        onClose={() => setRejecting(null)}
+        onSubmit={reject}
+      />
+      <LoanDetailsDrawer loanId={detailsId} onClose={() => setDetailsId(null)} />
     </ModulePage>
   );
 }

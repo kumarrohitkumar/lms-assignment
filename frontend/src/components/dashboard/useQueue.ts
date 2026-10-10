@@ -8,7 +8,9 @@ import { useSession } from '../SessionProvider';
  * Loads a list from the API and exposes helpers to refresh it or drop/replace one item after an action.
  * `refreshing` and `updatedAt` let the page show that a refresh actually happened, even when nothing changed.
  */
-export function useQueue<T extends { id: string }>(path: string, key: string) {
+export function useQueue<T extends { id: string }>(basePath: string, key: string, params: Record<string, string> = {}) {
+  const query = new URLSearchParams(Object.entries(params).filter(([, v]) => v)).toString();
+  const path = query ? `${basePath}?${query}` : basePath;
   const { user } = useSession();
   const [items, setItems] = useState<T[] | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -65,3 +65,54 @@ input[type="range"] {
   height: 8px;
   background: radial-gradient(circle at 8px 0, transparent 6px, var(--color-ledger-wash) 6.5px) -8px 0 / 16px 8px repeat-x;
 }
+
+/* ---------- Motion ----------
+   One quiet vocabulary: things rise into place, dialogs pop, drawers slide, changes flash once.
+   All of it is switched off by the prefers-reduced-motion rule above. */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes slide-in { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes flash {
+  0% { background-color: var(--color-ledger-wash); }
+  100% { background-color: transparent; }
+}
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+@keyframes draw { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+
+.anim-rise {
+  animation: rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+.anim-fade { animation: fade 0.3s ease-out both; }
+.anim-flash { animation: flash 1.6s ease-out; }
+
+dialog[open] { animation: pop 0.22s cubic-bezier(0.2, 0.7, 0.2, 1); }
+dialog[open]::backdrop { animation: fade 0.22s ease-out; }
+dialog.drawer[open] { animation: slide-in 0.3s cubic-bezier(0.2, 0.7, 0.2, 1); }
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-line);
+  border-radius: 0.375rem;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent);
+  animation: shimmer 1.3s infinite;
+}
+
+.check-draw { stroke-dasharray: 24; animation: draw 0.4s ease-out both; animation-delay: calc(var(--i, 0) * 60ms + 120ms); }
+
+/* Buttons respond to presses. */
+button:not(:disabled):active { transform: translateY(1px); }

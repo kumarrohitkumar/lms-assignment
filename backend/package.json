@@ -9,7 +9,8 @@
     "seed": "tsx src/scripts/seed.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "backfill": "tsx src/scripts/backfill.ts"
   },
   "license": "ISC",
   "type": "commonjs",

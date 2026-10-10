@@ -7,13 +7,13 @@ describe('rbac helpers', () => {
     expect(allowedModules('SANCTION').map((m) => m.key)).toEqual(['sanction']);
     expect(allowedModules('DISBURSEMENT').map((m) => m.key)).toEqual(['disbursement']);
     expect(allowedModules('COLLECTION').map((m) => m.key)).toEqual(['collection']);
-    expect(allowedModules('ADMIN').map((m) => m.key)).toEqual(['sales', 'sanction', 'disbursement', 'collection']);
+    expect(allowedModules('ADMIN').map((m) => m.key)).toEqual(['overview', 'sales', 'sanction', 'disbursement', 'collection', 'history']);
     expect(allowedModules('BORROWER')).toEqual([]);
   });
 
   it('sends each role to its home', () => {
     expect(homePathFor('BORROWER')).toBe('/apply');
-    expect(homePathFor('ADMIN')).toBe('/dashboard/sales');
+    expect(homePathFor('ADMIN')).toBe('/dashboard/overview');
     expect(homePathFor('COLLECTION')).toBe('/dashboard/collection');
   });
 
@@ -28,6 +28,10 @@ describe('rbac helpers', () => {
     ['ADMIN', '/apply', false],
     ['COLLECTION', '/dashboard', true],
     ['COLLECTION', '/dashboard/salesy', false],
+    ['ADMIN', '/dashboard/history', true],
+    ['ADMIN', '/dashboard/overview', true],
+    ['SANCTION', '/dashboard/history', false],
+    ['COLLECTION', '/dashboard/overview', false],
   ] as const)('%s on %s → %s', (role, path, allowed) => {
     expect(canAccessPath(role, path)).toBe(allowed);
   });
@@ -43,7 +47,7 @@ describe('safeNextPath (post-login redirect)', () => {
     ['dashboard/sales'],
     [''],
   ])('ignores unsafe value %s and falls back to the role home', (next) => {
-    expect(safeNextPath('ADMIN', next)).toBe('/dashboard/sales');
+    expect(safeNextPath('ADMIN', next)).toBe('/dashboard/overview');
   });
 
   it('ignores a same-origin path the role cannot open', () => {
@@ -57,6 +61,6 @@ describe('safeNextPath (post-login redirect)', () => {
   });
 
   it('only allows app pages, not arbitrary same-origin URLs like the API', () => {
-    expect(safeNextPath('ADMIN', '/api/auth/logout')).toBe('/dashboard/sales');
+    expect(safeNextPath('ADMIN', '/api/auth/logout')).toBe('/dashboard/overview');
   });
 });

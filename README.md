@@ -14,6 +14,20 @@ A lending platform where borrowers apply for personal loans and internal teams t
 | Auth     | JWT (httpOnly cookie) + bcrypt |
 | Tests    | Vitest, supertest, mongodb-memory-server, Testing Library |
 
+## Beyond the brief
+
+Everything the assignment asks for is implemented as specified. These additions build on it:
+
+| Area | What it adds |
+|---|---|
+| **What was checked** | Each loan keeps the checks run at application (age, salary, PAN, employment, salary slip) with the values seen. Reviewers see it before approving; borrowers see it on their loan. |
+| **Reasons at every decision** | Sanction approve takes an optional remark. Reject needs a category the borrower sees (income mismatch, unreadable slip, and so on) plus an optional note. Disbursement needs the bank transfer reference, and can also **reject** a sanctioned loan with a reason (bank details failed, KYC, borrower withdrew). |
+| **Payment reversal** | Collection can reverse a bounced or mistaken payment with a reason. The payment stays in the record as reversed (its UTR stays used), the balance goes back up, and a loan that payment had closed is reopened. Collection also has a Closed tab. |
+| **History** | Every loan has a timeline: status changes, payments and reversals, each with who did it (or "Automatic") and why. It is shown in a details drawer in every module and on the borrower's loan. |
+| **Admin Overview and History** | Admin gets a portfolio overview (loans by stage, disbursed, collected, outstanding) and a searchable, filterable list of every loan. These span every stage, so they are admin-only; executives still see only their own module. |
+| **Working faster** | Search by name, email or PAN in every queue. Refresh shows progress and the time of the last update. |
+| **Motion** | Lists rise in, dialogs pop, drawers slide, numbers count up, and changes flash once. All of it is turned off for people who set "reduce motion". |
+
 ## Live demo
 
 **https://kosh-lms.vercel.app** — log in with any account from [Login credentials](#login-credentials) below.
@@ -246,13 +260,19 @@ Base path: `/api`. Errors always look like `{ "error": { "code", "message", "det
 | `GET /loans/:id/salary-slip` | owner, Admin, Sanction, Disbursement, Collection | 200 file stream | 403, 404 |
 | `GET /sales/leads` | Sales, Admin | 200 `{leads}` | 403 |
 | `GET /sanction/loans` | Sanction, Admin | 200 `{loans}` (Applied) | 403 |
-| `POST /sanction/loans/:id/approve` | Sanction, Admin | 200 `{loan}` | 404, 409 |
-| `POST /sanction/loans/:id/reject` `{reason}` | Sanction, Admin | 200 `{loan}` | 400, 404, 409 |
+| `POST /sanction/loans/:id/approve` `{remark?}` | Sanction, Admin | 200 `{loan}` | 404, 409 |
+| `POST /sanction/loans/:id/reject` `{category, note?}` (or `{reason}`) | Sanction, Admin | 200 `{loan}` | 400, 404, 409 |
 | `GET /disbursement/loans` | Disbursement, Admin | 200 `{loans}` (Sanctioned) | 403 |
-| `POST /disbursement/loans/:id/disburse` | Disbursement, Admin | 200 `{loan}` | 404, 409 |
+| `POST /disbursement/loans/:id/disburse` `{reference, remark?}` | Disbursement, Admin | 200 `{loan}` | 400 reference, 404, 409 |
+| `POST /disbursement/loans/:id/reject` `{category, note?}` | Disbursement, Admin | 200 `{loan}` (REJECTED) | 400, 404, 409 |
 | `GET /collection/loans` | Collection, Admin | 200 `{loans}` (Disbursed) | 403 |
 | `GET /collection/loans/:id/payments` | Collection, Admin | 200 `{loan, payments}` | 404 |
 | `POST /collection/loans/:id/payments` `{utr,amount,paymentDate}` | Collection, Admin | 201 `{loan, payment}` | 400 amount/date, **409 DUPLICATE_UTR**, 409 loan not active |
+| `POST /collection/payments/:id/reverse` `{reason}` | Collection, Admin | 200 `{loan, payment}` | 400, 404, 409 already reversed |
+| `GET /loans/:id` | owner, Admin, Sanction, Disbursement, Collection | 200 `{loan, timeline, payments}` | 403, 404 |
+| `GET /loans?status&q&page&pageSize` | Admin | 200 `{loans, total, page, pageSize}` | 403 |
+| `GET /admin/overview` | Admin | 200 counts and money totals | 403 |
+| `GET /decisions/rejection-categories` | staff | 200 categories per stage | 403 |
 
 A loan in API responses has this shape (amounts in rupees):
 
@@ -276,10 +296,10 @@ A loan in API responses has this shape (amounts in rupees):
 npm test
 ```
 
-- **Backend (142 tests):**
+- **Backend (166 tests):**
   - Unit tests for the BRE (age boundaries, PAN formats, multiple failures), loan math, money conversion, the status machine and the storage driver.
   - API tests against an in-memory MongoDB for every route: success paths, validation, 401/403 for every module, 409 conflicts, duplicate UTR, overpayment, concurrent payments, auto-close, rollback when the loan update fails, Indian-date boundaries, impossible dates, direct-to-storage uploads (ownership of the key, size and content checks, clean-up of rejected files), proxy-aware client IPs, and a full lifecycle test using the seeded accounts.
-- **Frontend (39 tests):** loan math matches the server, client BRE, RBAC helpers including the safe `?next=` redirect, INR formatting, the upload helper (direct vs multipart), and a component test that moves the sliders and checks the live repayment panel.
+- **Frontend (49 tests):** loan math matches the server, client BRE, RBAC helpers including the safe `?next=` redirect, INR formatting, the upload helper (direct vs multipart), and a component test that moves the sliders and checks the live repayment panel.
 
 The first backend run downloads a MongoDB binary for `mongodb-memory-server`. To use an installed `mongod` instead, set `MONGOMS_SYSTEM_BINARY=/path/to/mongod`.
 

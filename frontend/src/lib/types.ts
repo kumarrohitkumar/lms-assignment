@@ -37,6 +37,25 @@ export interface ProfileResponse {
   stage: BorrowerStage;
 }
 
+export interface EligibilityCheck {
+  rule: 'AGE' | 'SALARY' | 'PAN' | 'EMPLOYMENT' | 'SALARY_SLIP';
+  label: string;
+  passed: boolean;
+  detail: string;
+}
+
+export type DecisionStage = 'SANCTION' | 'DISBURSEMENT';
+export type RejectionCategories = Record<DecisionStage, { value: string; label: string }[]>;
+
+export interface Rejection {
+  stage: DecisionStage;
+  category: string;
+  categoryLabel: string;
+  note: string | null;
+  by: string;
+  at: string;
+}
+
 export interface Loan {
   id: string;
   borrower: { id: string; name?: string; email?: string };
@@ -51,6 +70,9 @@ export interface Loan {
   outstanding: number;
   status: LoanStatus;
   rejectionReason: string | null;
+  eligibility: EligibilityCheck[];
+  rejection: Rejection | null;
+  disbursement: { reference: string; remark: string | null; by: string; at: string } | null;
   statusHistory: { from: LoanStatus | null; to: LoanStatus; by: string | null; at: string; note: string | null }[];
   sanctionedAt: string | null;
   disbursedAt: string | null;
@@ -72,5 +94,30 @@ export interface Payment {
   utr: string;
   amount: number;
   paymentDate: string;
+  status: 'RECEIVED' | 'REVERSED';
+  reversal: { reason: string; by: string; at: string } | null;
   createdAt: string;
+}
+
+export interface Actor {
+  id: string | null;
+  name: string;
+  role: Role | 'SYSTEM' | 'UNKNOWN';
+}
+
+export type TimelineEvent =
+  | { type: 'STATUS'; at: string; from: LoanStatus | null; to: LoanStatus; note: string | null; actor: Actor }
+  | { type: 'PAYMENT' | 'REVERSAL'; at: string; utr: string; amount: number; note: string | null; actor: Actor };
+
+export interface LoanDetail {
+  loan: Loan;
+  timeline: TimelineEvent[];
+  payments: Payment[];
+}
+
+export interface Overview {
+  counts: Record<LoanStatus, number>;
+  leads: number;
+  borrowers: number;
+  money: { disbursed: number; collected: number; outstanding: number };
 }

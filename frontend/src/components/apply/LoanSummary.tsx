@@ -1,7 +1,14 @@
+'use client';
+
 import { employmentLabel, formatDate, formatDays, formatINR } from '@/lib/format';
 import type { Loan } from '@/lib/types';
 import { LifecycleTrack } from '../LifecycleTrack';
-import { Alert, Panel, StatusBadge } from '../ui';
+import { useState } from 'react';
+import { EligibilityChecklist } from '../loan/EligibilityChecklist';
+import { useLoanDetail } from '../loan/LoanDetails';
+import { RejectionNotice } from '../loan/RejectionNotice';
+import { Timeline } from '../loan/Timeline';
+import { Panel, Skeleton, StatusBadge } from '../ui';
 
 const statusCopy: Record<Loan['status'], string> = {
   APPLIED: 'Your application is with our sanction team. You will see the decision here.',
@@ -11,11 +18,30 @@ const statusCopy: Record<Loan['status'], string> = {
   REJECTED: 'This application was not approved.',
 };
 
-export function LoanSummary({ loan }: { loan: Loan }) {
+function LoanHistory({ loanId }: { loanId: string }) {
+  const { detail, error } = useLoanDetail(loanId);
+  if (error) return <p className="mt-3 text-sm text-rust">{error}</p>;
+  if (!detail) return <Skeleton className="mt-4 h-40" />;
+  return (
+    <div className="mt-4 grid gap-6 md:grid-cols-2">
+      <div>
+        <h3 className="mb-3 text-sm font-semibold">What we checked</h3>
+        <EligibilityChecklist checks={detail.loan.eligibility} />
+      </div>
+      <div>
+        <h3 className="mb-3 text-sm font-semibold">History</h3>
+        <Timeline events={detail.timeline} />
+      </div>
+    </div>
+  );
+}
+
+export function LoanSummary({ loan, defaultOpen = false }: { loan: Loan; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen || loan.status === 'REJECTED');
   const paidShare = loan.totalRepayment ? Math.min(100, (loan.amountPaid / loan.totalRepayment) * 100) : 0;
 
   return (
-    <Panel className="p-5 sm:p-6">
+    <Panel className="anim-rise p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm text-ink-soft">Applied {formatDate(loan.createdAt)}</p>
@@ -32,11 +58,9 @@ export function LoanSummary({ loan }: { loan: Loan }) {
       </div>
 
       <p className="mt-6 text-ink-soft">{statusCopy[loan.status]}</p>
-      {loan.status === 'REJECTED' && loan.rejectionReason && (
-        <div className="mt-3">
-          <Alert title="Reason given">{loan.rejectionReason}</Alert>
-        </div>
-      )}
+      <div className="mt-3">
+        <RejectionNotice loan={loan} />
+      </div>
 
       <dl className="tabular mt-6 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-line pt-5 text-sm sm:grid-cols-4">
         <div>
@@ -67,6 +91,18 @@ export function LoanSummary({ loan }: { loan: Loan }) {
           View salary slip
         </a>
       </p>
+
+      <details className="group mt-5 border-t border-line pt-4" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+        <summary className="cursor-pointer list-none text-sm font-semibold text-ledger">
+          <span className="inline-flex items-center gap-1.5">
+            <svg viewBox="0 0 16 16" className="size-3.5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M6 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            What we checked and full history
+          </span>
+        </summary>
+        {open && <LoanHistory loanId={loan.id} />}
+      </details>
     </Panel>
   );
 }

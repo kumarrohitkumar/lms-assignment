@@ -1,19 +1,24 @@
 import type { Role } from './types';
 
 export interface DashboardModule {
-  key: 'sales' | 'sanction' | 'disbursement' | 'collection';
+  key: 'overview' | 'sales' | 'sanction' | 'disbursement' | 'collection' | 'history';
   label: string;
   href: string;
   description: string;
   roles: Role[];
 }
 
-/** Must match MODULE_ROLES in the backend; the API enforces the same rules with 403s. */
+/**
+ * Must match the backend's role checks; the API enforces the same rules with 403s. Executives see only
+ * their own stage. Overview and History span every stage, so they are admin-only.
+ */
 export const MODULES: DashboardModule[] = [
+  { key: 'overview', label: 'Overview', href: '/dashboard/overview', description: 'The whole loan book at a glance', roles: ['ADMIN'] },
   { key: 'sales', label: 'Sales', href: '/dashboard/sales', description: 'Registered users who have not applied yet', roles: ['SALES', 'ADMIN'] },
   { key: 'sanction', label: 'Sanction', href: '/dashboard/sanction', description: 'Applications waiting for a decision', roles: ['SANCTION', 'ADMIN'] },
   { key: 'disbursement', label: 'Disbursement', href: '/dashboard/disbursement', description: 'Sanctioned loans ready to pay out', roles: ['DISBURSEMENT', 'ADMIN'] },
   { key: 'collection', label: 'Collection', href: '/dashboard/collection', description: 'Active loans and repayments', roles: ['COLLECTION', 'ADMIN'] },
+  { key: 'history', label: 'History', href: '/dashboard/history', description: 'Every loan, every decision and who made it', roles: ['ADMIN'] },
 ];
 
 export const allowedModules = (role: Role) => MODULES.filter((m) => m.roles.includes(role));

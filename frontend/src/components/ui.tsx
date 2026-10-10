@@ -113,8 +113,12 @@ export function StatusBadge({ status }: { status: LoanStatus }) {
   return <span className={cx('inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold', s.className)}>{s.label}</span>;
 }
 
-export function Panel({ className, children }: { className?: string; children: ReactNode }) {
-  return <section className={cx('rounded-lg border border-line bg-surface', className)}>{children}</section>;
+export function Panel({ className, children, style }: { className?: string; children: ReactNode; style?: React.CSSProperties }) {
+  return (
+    <section className={cx('rounded-lg border border-line bg-surface', className)} style={style}>
+      {children}
+    </section>
+  );
 }
 
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
@@ -131,6 +135,58 @@ export function LoadingBlock({ label = 'Loading' }: { label?: string }) {
     <div className="flex items-center justify-center gap-3 py-16 text-ink-soft" role="status">
       <Spinner /> {label}…
     </div>
+  );
+}
+
+/** Placeholder blocks that shimmer while content loads. */
+export function Skeleton({ className }: { className?: string }) {
+  return <div className={cx('skeleton', className)} aria-hidden="true" />;
+}
+
+export function SkeletonCards({ count = 3 }: { count?: number }) {
+  return (
+    <div className="flex flex-col gap-4" role="status" aria-label="Loading">
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="rounded-lg border border-line bg-surface p-5">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="mt-3 h-3 w-64 max-w-full" />
+          <Skeleton className="mt-6 h-3 w-full" />
+          <Skeleton className="mt-2 h-3 w-3/4" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** A panel that slides in from the right; on phones it covers the screen. Native <dialog> underneath. */
+export function Drawer({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+  }, [open]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClose={onClose}
+      onClick={(e) => e.target === ref.current && onClose()}
+      className="drawer fixed inset-y-0 right-0 left-auto m-0 h-full max-h-none w-full max-w-xl border-l border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-ink/40"
+    >
+      <div className="flex h-full flex-col">
+        <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <button type="button" onClick={onClose} className="rounded-md p-1.5 text-ink-soft hover:bg-ink/5 hover:text-ink" aria-label="Close">
+            <svg viewBox="0 0 20 20" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <path d="M5 5l10 10M15 5L5 15" />
+            </svg>
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
+      </div>
+    </dialog>
   );
 }
 

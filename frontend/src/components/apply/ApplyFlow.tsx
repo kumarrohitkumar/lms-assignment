@@ -108,11 +108,11 @@ function BorrowerApplication() {
   return (
     <div className="flex flex-col gap-8">
       <Stepper current={step} completed={completed} />
-      <div>
+      <div key={`h${step}`} className="anim-rise">
         <h1 className="text-2xl font-bold tracking-tight">{stepCopy[step]!.title}</h1>
         <p className="text-ink-soft">{stepCopy[step]!.intro}</p>
       </div>
-      <Panel className="p-5 sm:p-8">
+      <Panel key={`p${step}`} className="anim-rise p-5 sm:p-8" style={{ '--i': 1 } as React.CSSProperties}>
         {step === 0 && <PersonalDetailsForm initial={profile.profile} onSaved={onProfile} />}
         {step === 1 && (
           <SalarySlipUpload
