@@ -6,13 +6,15 @@ import { AUTH_COOKIE, authenticate, signToken } from '../../middleware/authentic
 import { validateBody } from '../../middleware/validate';
 import type { Role } from '../../lib/roles';
 import { loginSchema, registerSchema } from './auth.schemas';
-import { registerBorrower, toPublicUser, verifyCredentials } from './auth.service';
+import { recordLogin, registerBorrower, toPublicUser, verifyCredentials } from './auth.service';
+import { User } from '../../models/User';
+import { AppError } from '../../lib/errors';
 
 function cookieOptions(): CookieOptions {
   return { httpOnly: true, sameSite: 'lax', secure: env().NODE_ENV === 'production', path: '/' };
 }
 
-function issueSession(res: Response, user: { _id: unknown; name: string; email: string; role: string }) {
+function issueSession(res: Response, user: Parameters<typeof toPublicUser>[0]) {
   const token = signToken({ _id: user._id, role: user.role as Role });
   // Cookie lifetime follows the token's own expiry (JWT_EXPIRES_IN), so the two never drift apart.
   const { exp } = jwt.decode(token) as { exp: number };
@@ -59,12 +61,12 @@ export const authRouter = Router();
 
 authRouter.post('/register', registerLimiter, validateBody(registerSchema), async (req, res) => {
   const user = await registerBorrower(req.body);
-  res.status(201).json(issueSession(res, user));
+  res.status(201).json(issueSession(res, (await recordLogin(user._id)) ?? user));
 });
 
 authRouter.post('/login', loginLimiter, validateBody(loginSchema), async (req, res) => {
   const user = await verifyCredentials(req.body);
-  res.json(issueSession(res, user));
+  res.json(issueSession(res, (await recordLogin(user._id)) ?? user));
 });
 
 authRouter.post('/logout', (_req, res) => {
@@ -72,6 +74,8 @@ authRouter.post('/logout', (_req, res) => {
   res.status(204).end();
 });
 
-authRouter.get('/me', authenticate, (req, res) => {
-  res.json({ user: toPublicUser({ ...req.user!, _id: req.user!.id }) });
+authRouter.get('/me', authenticate, async (req, res) => {
+  const user = await User.findById(req.user!._id).lean();
+  if (!user) throw new AppError(401, 'UNAUTHENTICATED', 'Please log in to continue');
+  res.json({ user: toPublicUser({ ...user, role: user.role as string }) });
 });

@@ -238,7 +238,7 @@ export const openApiDocument = {
       Error: { type: 'object', properties: { error: { type: 'object', required: ['code', 'message'], properties: { code: { type: 'string' }, message: { type: 'string' }, details: {} } } } },
       Role: { type: 'string', enum: ['ADMIN', 'SALES', 'SANCTION', 'DISBURSEMENT', 'COLLECTION', 'BORROWER'] },
       LoanStatus: { type: 'string', enum: ['APPLIED', 'SANCTIONED', 'REJECTED', 'DISBURSED', 'CLOSED'] },
-      User: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' }, email: { type: 'string' }, role: ref('Role') } },
+      User: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' }, email: { type: 'string' }, role: ref('Role'), createdAt: { type: ['string', 'null'], format: 'date-time' }, lastLoginAt: { type: ['string', 'null'], format: 'date-time' } } },
       Session: { type: 'object', properties: { user: ref('User'), token: { type: 'string' } } },
       ProfileInput: {
         type: 'object',

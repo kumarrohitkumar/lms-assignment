@@ -11,10 +11,31 @@ export interface PublicUser {
   name: string;
   email: string;
   role: Role;
+  createdAt: Date | null;
+  lastLoginAt: Date | null;
 }
 
-export function toPublicUser(user: { _id: unknown; name: string; email: string; role: string }): PublicUser {
-  return { id: String(user._id), name: user.name, email: user.email, role: user.role as Role };
+export function toPublicUser(user: {
+  _id: unknown;
+  name: string;
+  email: string;
+  role: string;
+  createdAt?: Date | null;
+  lastLoginAt?: Date | null;
+}): PublicUser {
+  return {
+    id: String(user._id),
+    name: user.name,
+    email: user.email,
+    role: user.role as Role,
+    createdAt: user.createdAt ?? null,
+    lastLoginAt: user.lastLoginAt ?? null,
+  };
+}
+
+/** Stamps the login time and returns the updated user. */
+export async function recordLogin(userId: unknown) {
+  return User.findByIdAndUpdate(userId, { $set: { lastLoginAt: new Date() } }, { returnDocument: 'after' });
 }
 
 /** Public sign-up always creates a borrower; staff accounts come from the seed script. */

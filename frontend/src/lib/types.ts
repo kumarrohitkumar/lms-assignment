@@ -8,6 +8,8 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  createdAt?: string | null;
+  lastLoginAt?: string | null;
 }
 
 export interface BreFailure {

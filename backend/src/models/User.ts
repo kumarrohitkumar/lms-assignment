@@ -7,6 +7,8 @@ const userSchema = new Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true, select: false },
     role: { type: String, enum: ROLES, required: true, index: true },
+    /** Updated on every successful login or sign-up. */
+    lastLoginAt: { type: Date, default: null },
   },
   { timestamps: true },
 );
