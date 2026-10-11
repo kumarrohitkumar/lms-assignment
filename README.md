@@ -361,3 +361,13 @@ The live demo runs entirely on free tiers: Vercel for both apps, MongoDB Atlas M
 - Set `BACKEND_URL` to the API's URL before building. Next.js forwards `/api/*` to it, so the auth cookie stays first-party on the web app's domain.
 
 **Other hosts:** `backend/Dockerfile` builds a small production image (`node dist/server.js`) for Render, Railway, Fly or any container host. On a long-running host, use `src/server.ts` as is. Set `TRUST_PROXY_HOPS` to the number of proxies in front of the API.
+
+---
+
+## All my live projects
+
+| Project | What it is | Live | Code | Demo login |
+|---|---|---|---|---|
+| **Kosh LMS** | Loan management: borrower applies (eligibility rules, salary slip, simple interest), teams sanction, disburse and collect | [kosh-lms.vercel.app](https://kosh-lms.vercel.app) · [API docs](https://kosh-lms.vercel.app/api/docs) | [lms-assignment](https://github.com/kumarrohitkumar/lms-assignment) | `admin@lms.dev` / `Password@123` |
+| **JobConnect** | Job portal: seekers search and apply in one click, recruiters post jobs and shortlist | [jobconnect-portal-alpha.vercel.app](https://jobconnect-portal-alpha.vercel.app) | [Job_Portal](https://github.com/kumarrohitkumar/Job_Portal) | `student@jobconnect.dev` / `Demo@1234` |
+| **Chatify** | Real-time direct and group chat with typing, read receipts and photos | [chatify-13-205-125-184.sslip.io](https://chatify-13-205-125-184.sslip.io) | [chat_app](https://github.com/kumarrohitkumar/chat_app) | `ananya@demo.chat` / `demo1234` |
