@@ -1,5 +1,25 @@
 # Kosh — Loan Management System
 
+> A loan management system: a borrower applies online, and four internal teams take the loan from application to closure, with every decision recorded.
+
+**[Live demo](https://kosh-lms.vercel.app)** · **[Demo video](https://www.youtube.com/watch?v=D0_4UIqaj7g)** · **[API docs](https://kosh-lms.vercel.app/api/docs)** · Login `admin@lms.dev` / `Password@123`
+
+**Stack:** Next.js 16 · React 19 · TypeScript · Express 5 · MongoDB · AWS S3 · Vercel
+
+## At a glance
+
+- **Correct under concurrency:** the loan lifecycle is an explicit state machine with conditional atomic updates, so two officers acting at once can never both approve or disburse a loan; a partial unique index allows one open loan per borrower.
+- **Money handled safely:** amounts stored as integer paise, simple interest computed on the server, repayments keyed by a unique UTR so a resubmitted payment is never counted twice, and reversals that reopen a closed loan.
+- **Access and audit:** five roles enforced in the API and the UI; every approval, rejection, payment and reversal lands in a per-loan timeline with who, when and why.
+- **Built to run:** salary slips upload straight to a private S3 bucket through presigned requests (avoiding Vercel's 4.5 MB body limit), and moving the API next to the database cut response time from about 1.1 s to 0.15 s.
+- **Tested:** 271 automated tests (190 API, 81 UI).
+
+![Operations overview](docs/screenshots/overview.png)
+
+---
+
+## Overview
+
 A lending platform where borrowers apply for personal loans and internal teams take each loan through its lifecycle:
 **Applied → Sanctioned → Disbursed → Closed** (or **Rejected**).
 
