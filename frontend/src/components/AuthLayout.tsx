@@ -60,12 +60,28 @@ export function AuthLayout({ title, intro, children }: { title: string; intro: s
         <p className="relative text-sm text-white/60">Simple interest, charged only for the days you borrow.</p>
       </aside>
 
-      <div className="relative flex flex-col justify-center px-4 py-10 sm:px-10">
-        <ThemeToggle className="absolute top-4 right-4" />
-        <div className="anim-rise mx-auto w-full max-w-sm">
-          <div className="mb-10 lg:hidden">
-            <Brand href="/login" />
+      <div className="relative flex flex-col lg:justify-center">
+        <ThemeToggle className="absolute top-4 right-4 z-10" />
+
+        {/* On phones the side panel is hidden, so the same animated loan card leads the page here. */}
+        <div className="relative overflow-hidden rounded-b-3xl bg-ledger px-4 pt-5 pb-6 text-white lg:hidden">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.07]"
+            style={{ backgroundImage: 'repeating-linear-gradient(0deg, #fff 0 1px, transparent 1px 44px)' }}
+          />
+          <div className="relative">
+            <Brand href="/login" light />
+            <p className="anim-rise mt-4 text-lg font-semibold leading-snug" style={{ '--i': 1 } as React.CSSProperties}>
+              Personal loans from ₹50,000 to ₹5,00,000 at a flat 12% a year.
+            </p>
+            <div className="anim-rise mt-4 -mb-9 origin-top scale-[0.86] sm:mb-0 sm:scale-100" style={{ '--i': 2 } as React.CSSProperties}>
+              <LoanHeroArt />
+            </div>
           </div>
+        </div>
+
+        <div className="anim-rise mx-auto w-full max-w-sm px-4 py-8 sm:px-0 lg:py-10">
           <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
           <p className="mt-1 text-ink-soft">{intro}</p>
           <div className="mt-8">{children}</div>
